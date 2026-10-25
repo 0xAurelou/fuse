@@ -1,0 +1,13 @@
+[global]
+match-contract = "FUSEFormal"
+function = "check_"
+forge-build-out = "out-formal"
+loop = 3
+solver-timeout-branching = 100
+solver-timeout-assertion = 60000
+solver-threads = 4
+# Native timeout avoids relying on operating-system process enumeration to stop Z3.
+solver-command = "z3 -T:45"
+panic-error-codes = "*"
+json-output = "formal-results/halmos.json"
+statistics = true

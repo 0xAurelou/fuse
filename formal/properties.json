@@ -1,0 +1,83 @@
+{
+  "contract": "formal/FUSEFormal.t.sol:FUSEFormal",
+  "properties": [
+    {
+      "function": "check_deposit_credit_excludes_refund(uint64)"
+    },
+    {
+      "function": "check_deposit_refund_excludes_credit(uint64)"
+    },
+    {
+      "function": "check_pending_deposit_cannot_fund_lp(uint64)"
+    },
+    {
+      "function": "check_net_settlement_conserves_usdc(uint64,uint64,bool)"
+    },
+    {
+      "function": "check_underfunded_settlement_is_atomic(uint64)"
+    },
+    {
+      "function": "check_epoch_cannot_execute_twice(uint64)"
+    },
+    {
+      "function": "check_settlement_requires_independent_risk(uint64)"
+    },
+    {
+      "function": "check_cumulative_withdrawal_pays_only_delta(uint64,uint64)"
+    },
+    {
+      "function": "check_operator_cannot_redirect_withdrawal(uint64)"
+    },
+    {
+      "function": "check_signer_rotation_invalidates_authorization(uint64)"
+    },
+    {
+      "function": "check_guardian_pause_preserves_funded_claims(uint64)"
+    },
+    {
+      "function": "check_reentrant_token_cannot_duplicate_withdrawal(uint64)"
+    },
+    {
+      "function": "check_reward_budget_and_bitmap_replay(uint96)"
+    },
+    {
+      "function": "check_reward_global_allocation_cap(uint96,uint96)"
+    },
+    {
+      "function": "check_users_cannot_transfer_before_activation(uint96)"
+    },
+    {
+      "function": "check_distributed_profit_cannot_be_reused(uint64)"
+    },
+    {
+      "function": "check_redemption_burn_and_backing(address)"
+    },
+    {
+      "function": "check_redemption_splitting_same_account(address,bool)"
+    },
+    {
+      "function": "check_next_redemption_epoch_excludes_prior_claims(address)"
+    },
+    {
+      "function": "check_treasury_locked_without_approved_policy(uint96)"
+    },
+    {
+      "function": "check_transfer_activation_delay_and_irreversibility(uint32)"
+    },
+    {
+      "function": "check_reserve_funding_preserves_required_capital(uint64)"
+    },
+    {
+      "function": "check_reserve_cannot_underwrite_lp_payout(uint64)"
+    }
+  ],
+  "math_lemmas": [
+    "profit_consumption_within_eligible_for_all_configured_bps",
+    "cumulative_redemption_telescopes_and_never_decreases",
+    "wallet_splitting_never_increases_payout_and_rounds_less_than_one_unit",
+    "single_floor_rounding_is_strictly_less_than_one_atomic_unit",
+    "splitting_reserve_distributions_cannot_save_consumed_profit",
+    "two_account_discounted_redemptions_remain_backed",
+    "deducting_prior_liabilities_preserves_backing_after_claims"
+  ]
+}

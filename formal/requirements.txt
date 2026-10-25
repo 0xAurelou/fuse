@@ -1,0 +1,3 @@
+# Halmos pins its Z3 Python/binary dependency to 4.12.6.0.
+halmos==0.2.6
+z3-solver==4.12.6.0

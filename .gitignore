@@ -13,3 +13,12 @@ states/
 # Optional
 .env
 .env.local
+
+# Foundry output and local caches
+out/
+cache/
+broadcast/
+out-formal/
+formal-results/
+.venv-formal/
+__pycache__/
