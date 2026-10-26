@@ -2,7 +2,7 @@
 
 ## Current status
 
-The active implementation uses **Three.js 0.186.1 + @pixiv/three-vrm 3.5.5** and an existing CC0 Victoria Rubin model in a transparent bottom-right overlay. Its idle loop is now an original pose interpretation of the user's [POKEDANCE reference](https://www.youtube.com/shorts/mnuHtWQW9IU): alternating side-pointing hands, curled/extended fingers, weight shifts and knee dips. Analytic 3D arm IK controls the actual hand positions rather than moving a flat portrait.
+The active implementation uses **Three.js 0.186.1 + @pixiv/three-vrm 3.5.5** and an existing CC0 Victoria Rubin model in a transparent bottom-right overlay. Its idle loop is now an original classical club dance: smooth sinusoidal side sways, per-beat bobs, flowing unison arm arcs and slow phrase breathing. Analytic 3D arm IK controls the actual hand positions rather than moving a flat portrait.
 
 Accepted positions trigger a stronger 5.2-second dance; confirmed wins trigger a distinct 4.8-second whole-body victory cheer; confirmed losses retain a 3.6-second blown-kiss gesture. Historical snapshots and duplicate responses are silent. Wave remains removed. The original opaque outfit geometry is restored in the file but hidden at runtime; the character's bust bones are detached from the VRM spring manager and driven by app-owned per-side springs instead. Hair/clothing springs remain active. Runtime colors/headphones, pause/minimize and reduced-motion support remain. This is a pose-based adaptation, not extracted motion capture or a newly sculpted original character. See the [active asset notes](../frontend/public/characters/victoria/README.md).
 

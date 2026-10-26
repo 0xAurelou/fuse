@@ -27,14 +27,17 @@ test('all dance and reaction poses stay finite with bounded expressions', () => 
   }
 });
 
-test('reference motif alternates both pointing hands and opposite weight shifts on the beat', () => {
-  const left = vtuberPose('idle', 0), right = vtuberPose('idle', 60 / DANCE_BPM);
-  assert.ok(left.hands.left[0] < 0 && left.hands.right[0] < 0);
-  assert.ok(right.hands.left[0] > 0 && right.hands.right[0] > 0);
-  assert.ok(left.x > 0 && right.x < 0);
+test('classical dance sways the weight smoothly and loops exactly each phrase', () => {
+  let minX = 1, maxX = -1;
+  for (let frame = 0; frame <= 480; frame++) {
+    const pose = vtuberPose('idle', frame / 60);
+    minX = Math.min(minX, pose.x); maxX = Math.max(maxX, pose.x);
+    for (const side of ['left', 'right'] as const) for (const value of pose.hands[side]) assert.ok(Math.abs(value) < .3);
+  }
+  assert.ok(minX < -.015 && maxX > .015, `expected weight shift both ways, got ${minX}..${maxX}`);
   for (let frame = 0; frame <= 240; frame++) {
     const a = dancePhase(frame / 60), b = dancePhase(frame / 60 + DANCE_SECONDS);
-    for (const field of ['point', 'hip', 'level', 'pulse'] as const) assert.ok(Math.abs(a[field] - b[field]) < 1e-10);
+    for (const field of ['sway', 'bob', 'pulse', 'flow'] as const) assert.ok(Math.abs(a[field] - b[field]) < 1e-10);
   }
 });
 

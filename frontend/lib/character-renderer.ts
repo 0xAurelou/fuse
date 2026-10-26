@@ -1,6 +1,6 @@
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import type { Object3D, Mesh, Material, Color, Vector3 } from 'three';
-import { REACTION_SECONDS, reactionEnvelope, vtuberPose } from './vtuber-motion';
+import { REACTION_SECONDS, dancePhase, reactionEnvelope, vtuberPose } from './vtuber-motion';
 import type { AvatarReaction } from './avatar-events';
 import { solveArmChain, type Point3 } from './vtuber-ik';
 import { buildCodeCustomDemo, VICTORIA_PROFILE, type CloneProfile, type CodeCustomDemo } from './avatar-code-demo';
@@ -184,6 +184,10 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
   };
   let options = { ...initial }, elapsed = 0, alive = true, frame = 0, previous = 0;
   let pointerX = 0, pointerY = 0, lookX = 0, lookY = 0;
+  // Crossfade between the dance and the neutral inspection pose: 0 = dance,
+  // 1 = neutral. Eased per frame so toggling never snaps.
+  let poseMix = 0;
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   function draw(dt: number) {
     if (!alive) return;
     const active = options.playing && !reduced.matches;
@@ -191,47 +195,44 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
     const blend = dt ? 1 - Math.exp(-dt * 5) : 1;
     lookX += ((active ? pointerX : 0) - lookX) * blend;
     lookY += ((active ? pointerY : 0) - lookY) * blend;
+    if (dt) poseMix += ((options.neutral ? 1 : 0) - poseMix) * Math.min(1, dt * 5);
+    const mix = poseMix;
     const reaction = options.neutral ? null : options.reaction;
     const age = reaction ? Math.max(0, (Date.now() - reaction.at) / 1000) : 0;
-    const motion = !reduced.matches && !options.neutral && reaction && age < REACTION_SECONDS[reaction.kind] ? reaction.kind : 'idle';
-    const pose = vtuberPose(motion, reduced.matches || options.neutral ? 0 : elapsed, lookX, lookY, age);
-    const excitement = motion === 'win' ? reactionEnvelope('win', age) : 0;
+    const motion = !reduced.matches && reaction && age < REACTION_SECONDS[reaction.kind] ? reaction.kind : 'idle';
+    const pose = vtuberPose(motion, reduced.matches ? 0 : elapsed, lookX, lookY, age);
+    const excitement = motion === 'win' ? reactionEnvelope('win', age) * (1 - mix) : 0;
+    // IK arm targets blend between the dance's authored hands and the
+    // arms-at-sides neutral stance, so elbows interpolate naturally.
+    const hands = {
+      left: pose.hands.left.map((value, i) => lerp(value, NEUTRAL_ARMS.hands.left[i], mix)) as [number, number, number],
+      right: pose.hands.right.map((value, i) => lerp(value, NEUTRAL_ARMS.hands.right[i], mix)) as [number, number, number],
+    };
+    const armPose = { hands, point: lerp(pose.point, 0, mix), pointUp: lerp(pose.pointUp, 0, mix) };
     for (const rig of rigs) {
-      rig.avatar.scene.rotation.y = rig.baseTurn + (options.neutral ? 0 : pose.turn);
-      if (!options.neutral) {
-        for (const [name, rotation] of Object.entries(pose.rotations)) {
-          const node = rig.bones.get(name);
-          if (node) node.rotation.set(...rotation);
-        }
-        if (rig.hips && rig.hipsOrigin) rig.hips.position.set(rig.hipsOrigin.x + pose.x, rig.hipsOrigin.y + pose.y, rig.hipsOrigin.z);
-      } else {
-        for (const [name, node] of rig.bones) {
-          const rest = rig.restRotations.get(name);
-          if (rest) node.rotation.copy(rest);
-        }
-        if (rig.hips && rig.hipsOrigin) rig.hips.position.set(rig.hipsOrigin.x, rig.hipsOrigin.y, rig.hipsOrigin.z);
-        poseArms(rig, NEUTRAL_ARMS);
+      rig.avatar.scene.rotation.y = rig.baseTurn + pose.turn * (1 - mix);
+      for (const [name, node] of rig.bones) {
+        const rest = rig.restRotations.get(name);
+        const target = pose.rotations[name] as [number, number, number] | undefined;
+        if (!rest) continue;
+        if (!target) { node.rotation.copy(rest); continue; }
+        node.rotation.set(
+          lerp(target[0], rest.x, mix),
+          lerp(target[1], rest.y, mix),
+          lerp(target[2], rest.z, mix),
+        );
       }
-      if (!options.neutral) poseArms(rig, pose);
-      if (options.neutral) {
-        rig.avatar.expressionManager?.setValue('happy', 0);
-        rig.avatar.expressionManager?.setValue('sad', 0);
-        rig.avatar.expressionManager?.setValue('angry', 0);
-        rig.avatar.expressionManager?.setValue('blink', 0);
-        rig.avatar.expressionManager?.setValue('blinkRight', 0);
-        rig.avatar.expressionManager?.setValue('oh', 0);
-        rig.avatar.expressionManager?.setValue('aa', 0);
-      } else {
-        rig.avatar.expressionManager?.setValue('happy', pose.happy);
-        rig.avatar.expressionManager?.setValue('sad', pose.sad);
-        rig.avatar.expressionManager?.setValue('angry', pose.angry);
-        rig.avatar.expressionManager?.setValue('blink', pose.blink);
-        rig.avatar.expressionManager?.setValue('blinkRight', pose.wink);
-        rig.avatar.expressionManager?.setValue('oh', Math.min(1, pose.mouthOh + rig.faceOh));
-        rig.avatar.expressionManager?.setValue('aa', pose.mouthAa);
-      }
-      rig.avatar.update(options.neutral ? 0 : dt);
-      rig.demo?.update(options.neutral ? 0 : dt, { id: reaction?.id ?? null, excitement: options.neutral ? 0 : excitement });
+      if (rig.hips && rig.hipsOrigin) rig.hips.position.set(rig.hipsOrigin.x + pose.x * (1 - mix), rig.hipsOrigin.y + pose.y * (1 - mix), rig.hipsOrigin.z);
+      poseArms(rig, armPose);
+      rig.avatar.expressionManager?.setValue('happy', pose.happy * (1 - mix));
+      rig.avatar.expressionManager?.setValue('sad', pose.sad * (1 - mix));
+      rig.avatar.expressionManager?.setValue('angry', pose.angry * (1 - mix));
+      rig.avatar.expressionManager?.setValue('blink', pose.blink * (1 - mix));
+      rig.avatar.expressionManager?.setValue('blinkRight', pose.wink * (1 - mix));
+      rig.avatar.expressionManager?.setValue('oh', Math.min(1, pose.mouthOh + rig.faceOh) * (1 - mix));
+      rig.avatar.expressionManager?.setValue('aa', pose.mouthAa * (1 - mix));
+      rig.avatar.update(dt);
+      rig.demo?.update(dt, { id: reaction?.id ?? null, excitement, pulse: reduced.matches ? 0 : dancePhase(elapsed).pulse * (1 - mix) });
     }
     renderer.render(scene, camera);
   }

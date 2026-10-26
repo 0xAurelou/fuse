@@ -82,7 +82,7 @@ type VrmLike = {
   springBoneManager?: { joints: Set<{ bone: import('three').Object3D }>; deleteJoint(joint: { bone: import('three').Object3D }): void };
 };
 
-export type BustDrive = { id: string | null; excitement: number };
+export type BustDrive = { id: string | null; excitement: number; pulse?: number };
 export type CodeCustomDemo = { update(dt: number, drive: BustDrive): void };
 
 type Sides = Array<{
@@ -125,8 +125,8 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
   addChoker(THREE, avatar, '#101826');
 
   const sides: Sides = [
-    { bone: boneL, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 82, damping: 6.4 }, liftParams: { stiffness: 150, damping: 11 }, kick: 1.9 },
-    { bone: boneR, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 98, damping: 7.8 }, liftParams: { stiffness: 150, damping: 11 }, kick: 1.6 },
+    { bone: boneL, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 82, damping: 5.6 }, liftParams: { stiffness: 150, damping: 10 }, kick: 2.6 },
+    { bone: boneR, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 98, damping: 6.8 }, liftParams: { stiffness: 150, damping: 10 }, kick: 2.2 },
   ];
   for (const side of sides) {
     side.restQuat = side.bone.quaternion.clone();
@@ -134,7 +134,7 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
     side.parentRestQuat = side.bone.parent!.getWorldQuaternion(new THREE.Quaternion());
     side.parentRestPos = side.bone.parent!.getWorldPosition(new THREE.Vector3());
   }
-  let lastId: string | null = null, fired = false;
+  let lastId: string | null = null, fired = false, lastPulse = 0;
   const quat = new THREE.Quaternion(), forward = new THREE.Vector3(), axis = new THREE.Vector3(1, 0, 0), spin = new THREE.Quaternion();
   return {
     update(dt: number, drive: BustDrive) {
@@ -146,6 +146,16 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
           side.lift.velocity -= side.kick * .8;
         }
       }
+      // Beat sync: a sharp impulse on each pulse peak makes the bounce read,
+      // not just lag. Rising edge only, so it fires once per beat.
+      const pulse = drive.pulse ?? 0;
+      if (pulse > .82 && lastPulse <= .82) {
+        for (const side of sides) {
+          side.pitch.velocity -= .55;
+          side.lift.velocity -= .45;
+        }
+      }
+      lastPulse = pulse;
       for (const side of sides) {
         side.bone.parent!.getWorldQuaternion(quat);
         quat.multiply(side.parentRestQuat!.clone().invert());
@@ -156,11 +166,16 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
         stepBustSpring(side.pitch, supportPitch, dt, side.pitchParams);
         stepBustSpring(side.lift, supportLift, dt, side.liftParams);
         // Apply the lag error, not the absolute support: the parent transform
-        // already carries the motion; the error is what the breast trails with.
-        const pitchErr = supportPitch - side.pitch.angle;
+        // already carries the motion; the error is what the breast trails
+        // with. Gain well above 1 makes the trail read at screen size.
+        const pitchErr = (supportPitch - side.pitch.angle) * 2.4;
         const liftErr = supportLift - side.lift.angle;
         side.bone.quaternion.copy(side.restQuat!).multiply(spin.setFromAxisAngle(axis, -pitchErr));
-        side.bone.position.set(side.restPos!.x, side.restPos!.y - liftErr * .5, side.restPos!.z);
+        side.bone.position.set(side.restPos!.x, side.restPos!.y - liftErr * .9, side.restPos!.z);
+        // three-vrm bones run with matrixAutoUpdate=false (the normalized
+        // humanoid drives them through .matrix); recompose the local matrix
+        // or the skin never sees the spring motion.
+        side.bone.updateMatrix();
       }
     },
   };

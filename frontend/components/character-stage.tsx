@@ -41,7 +41,7 @@ export const CharacterStage = memo(function CharacterStage({ playing, reaction }
     return () => clearTimeout(timer);
   }, [reaction]);
   const stopped = !playing || paused;
-  const caption = stopped ? 'PAUSED' : neutral ? 'NEUTRAL POSE' : activeReaction === 'entry' ? 'POSITION OPEN' : activeReaction === 'win' ? 'STAGE WON' : activeReaction === 'loss' ? 'KISS IT GOODBYE' : 'IDLE GROOVE';
+  const caption = stopped ? 'PAUSED' : neutral ? 'NEUTRAL POSE' : activeReaction === 'entry' ? 'POSITION OPEN' : activeReaction === 'win' ? 'STAGE WON' : activeReaction === 'loss' ? 'KISS IT GOODBYE' : 'CLASSIC DANCE';
   if (hidden) return <button className="vtuber-restore" onClick={() => setHidden(false)} aria-label="Show VTuber avatar"><Icon name="users" size={14}/><span>VTUBER</span></button>;
   return <aside className="vtuber-companion" aria-label="3D VTuber companion" data-reaction={stopped ? 'paused' : activeReaction || 'idle'}>
     <CharacterCanvas options={{ playing: !stopped, reaction, neutral }}/>
