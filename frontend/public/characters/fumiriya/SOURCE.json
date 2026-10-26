@@ -1,0 +1,12 @@
+{
+  "title": "Sakurada Fumiriya",
+  "source": "https://github.com/madjin/vrm-samples/blob/master/vroid/beta/Sakurada_Fumiriya.vrm",
+  "sourceRepository": "https://github.com/madjin/vrm-samples",
+  "embeddedLicense": {
+    "licenseName": "CC0",
+    "allowedUserName": "Everyone",
+    "commercialUssageName": "Allow"
+  },
+  "licenseReference": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "notes": "VRoid Studio sample model, CC0 section of madjin/vrm-samples. Downloaded unmodified; all customization in this app is runtime code in frontend/lib/avatar-code-demo.ts."
+}

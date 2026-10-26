@@ -1,0 +1,542 @@
+[
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 1148
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 816
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 696
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 597
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 544
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 504
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 1118
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 805
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 689
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 592
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 541
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 501
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 1032
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 771
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 667
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 578
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 530
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 2000,
+    "width_ppb": 493
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 1148857
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 816396
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 696359
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 597089
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 544995
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 504522
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 1118575
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 805315
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 689444
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 592712
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 541661
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 501873
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 1032233
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 771232
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 667693
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 578721
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 530921
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 2000,
+    "width_ppb": 493294
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 2872142
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 2040992
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1740898
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1492722
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1362489
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1261305
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 2796438
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 2013287
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1723610
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1481781
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1354153
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1254683
+  },
+  {
+    "multiplier": 2,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 2580582
+  },
+  {
+    "multiplier": 5,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 1928080
+  },
+  {
+    "multiplier": 10,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 1669234
+  },
+  {
+    "multiplier": 25,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 1446803
+  },
+  {
+    "multiplier": 50,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 1327302
+  },
+  {
+    "multiplier": 100,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 2000,
+    "width_ppb": 1233235
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 462
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 415
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 0,
+    "width_ppb": 361
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 460
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 413
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 500,
+    "width_ppb": 360
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 5000,
+    "width_ppb": 437
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 5000,
+    "width_ppb": 396
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1,
+    "house_edge_bps": 5000,
+    "width_ppb": 348
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 462678
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 415405
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 0,
+    "width_ppb": 361281
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 460633
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 413923
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 500,
+    "width_ppb": 360304
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 5000,
+    "width_ppb": 437136
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 5000,
+    "width_ppb": 396623
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 1000,
+    "house_edge_bps": 5000,
+    "width_ppb": 348720
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1156697
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 1038514
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 0,
+    "width_ppb": 903202
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1151583
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 1034808
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 500,
+    "width_ppb": 900761
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 5000,
+    "width_ppb": 1092841
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 5000,
+    "width_ppb": 991558
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 2500,
+    "house_edge_bps": 5000,
+    "width_ppb": 871801
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 0,
+    "width_ppb": 46267881
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 0,
+    "width_ppb": 41540576
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 0,
+    "width_ppb": 36128107
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 500,
+    "width_ppb": 46063344
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 500,
+    "width_ppb": 41392355
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 500,
+    "width_ppb": 36030474
+  },
+  {
+    "multiplier": 250,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 5000,
+    "width_ppb": 43713674
+  },
+  {
+    "multiplier": 1000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 5000,
+    "width_ppb": 39662358
+  },
+  {
+    "multiplier": 10000,
+    "volatility_30s_ppm": 100000,
+    "house_edge_bps": 5000,
+    "width_ppb": 34872070
+  }
+]

@@ -1,0 +1,121 @@
+Right now, FUSE doesn't properly incentivize external liquidity providers. That's a gap in our tokenomics.
+
+Our existing design rewards traders with FUSE and sends part of the LP's trading profits into the token reserve. But the LPVault is currently designed around protocol-controlled or whitelisted capital, with no public LP shares.
+
+I would change that.
+
+My preferred model is an LP vault earning real USDC profits, complemented by temporary FUSE incentives during bootstrapping. The LP should make money because it underwrites profitable trades, not because we're constantly emitting tokens to subsidize its returns.
+1. How LPs would earn money
+When a trader loses a Fuse, their committed USDC becomes LP revenue. When a trader survives, the LP pays the contractual winning amount.
+
+After netting those outcomes, the protocol distributes eligible realized profits:
+$100,000
+Illustrative eligible net trading profit
+
+
+$65,000
+LP share
+
+Retained in the vault, increasing share NAV
+
+
+$35,000
+FUSE backing
+
+Transferred to segregated redemption reserve
+
+
+
+Example at the maximum 35% allocation rate, before any separately specified costs or fees. Actual allocation can be much lower when LP capitalization is insufficient.
+LPs would deposit USDC and receive shares representing a proportional claim on LP equity. Those shares appreciate when underwriting is profitable and lose value during LP drawdowns.
+
+No guaranteed APY, no fixed interest payments.
+2. Add LP incentives during the first 60–90 days
+Real yield is the long-term incentive. But at launch, nobody knows whether FUSE will generate sustainable profits.
+
+I'd add a temporary FUSE mining allocation for LPs.
+Incentive	Proposal
+Primary reward	Share of net USDC underwriting profits
+Secondary reward	FUSE emissions for providing usable LP capital
+LP reward budget	Test 50M FUSE (5% of supply)
+Distribution	Decaying over 90 days
+Vesting	30 days for earned FUSE
+LP withdrawal	48-hour request period, subject to solvency
+Long-term	USDC returns only; emissions expire
+
+The 50M allocation would come from the currently unassigned 400M FUSE escrow, not from newly minted supply. This requires revising the provisional token allocation.
+
+Crucially, LP rewards should depend on time-weighted eligible capital and real underwriting demand. We don't want to distribute millions of FUSE to idle capital that contributes no economic value.
+3. Make LP shares redeemable for USDC
+I would introduce an asynchronous LP vault based on ERC-7540, extending ERC-4626.
+
+LPs receive vault shares whose NAV reflects the LP's realized net equity. Withdrawals enter a queue so capital cannot leave while it is underwriting guaranteed winning payouts. This is an established pattern for asynchronous investment strategies. 
+
+Ethereum Improvement Proposals
+
+
+
+
+For comparison, Hyperliquid's HLP already allows depositors to share in strategy PnL and uses a four-day deposit lockup. 
+
+Hyperliquid Docs
+
+
+
+
+The withdrawal queue also helps prevent a particularly dangerous situation: early LPs withdrawing at an overstated NAV immediately before correlated FUSE winners settle.
+4. One thing I would change about the 35% allocation
+Currently, FUSE token holders can receive up to 35% of eligible LP profits, despite LPs bearing the underwriting downside.
+
+That could discourage serious capital providers.
+
+I would introduce an LP-first profit waterfall:
+- Recover previous LP losses against a contribution-adjusted high-water mark.
+- Retain sufficient profits to restore required LP capitalization.
+- Only then allocate up to 35% of additional eligible profits to FUSE backing.
+We already have most of this logic in our design. The improvement is making the protection explicitly part of the LP's economic rights, rather than simply a discretionary operational policy.
+Example LP return
+Assume $5M of LP capital produces $200,000 of eligible realized net profit over a period, with the full 35% reserve allocation permitted.
+Destination	Amount
+LP share NAV increase	$130,000
+FUSE reserve contribution	$70,000
+LP return over the period	2.6%
+
+That is a hypothetical return, not a forecast. The same LP capital can also suffer losses.
+
+The strongest acquisition incentive for LPs is transparent, realized USDC performance after the reserve allocation—not a headline APY constructed from FUSE emissions.
+5. How I'd launch LP participation
+
+Phase 1 — Protocol-funded LP
+
+Start with the modeled $5M seed capital assumption. Establish real trading performance, oracle reliability and settlement reconciliation before accepting public LP deposits.
+
+
+
+
+Phase 2 — Whitelisted LPs
+
+Open a capped vault with temporary FUSE incentives and publish performance, utilization, outstanding guaranteed liabilities, and maximum drawdown.
+
+
+
+
+Phase 3 — Public LP vault
+
+Open permissionless deposits once NAV integrity, withdrawal procedures and the operator's settlement risks have been independently assessed. Reduce FUSE incentives over time.
+
+
+
+The final piece is capacity management. More deposits are not automatically better: if our LP has $20M but only enough trader activity to profitably use $3M, additional LP capital dilutes returns. We should cap deposits dynamically rather than reward idle TVL.
+My recommendation
+I'd amend our tokenomics with two distinct ways to participate economically:
+	FUSE holders	LPs
+Asset held	FUSE	USDC vault shares
+Main return	Growing redemption backing	Underwriting PnL
+Additional incentive	Scarcity and redemption redistribution	Temporary FUSE emissions
+Main risk	Token price, dilution and reserve growth	Direct trading losses
+Liquidity	Trade or redeem FUSE	Asynchronous USDC withdrawal
+
+This keeps the original FUSE token philosophy intact while giving liquidity providers a reason to underwrite our derivative.
+
+The next simulation should include LP capital as an endogenous variable. LPs should deposit more when risk-adjusted returns are attractive and request withdrawals after losses or declining utilization. Otherwise, our previous equilibrium assumes $5M of available LP capital without proving anyone will actually provide it.

@@ -40,6 +40,10 @@ contract GovernanceDeploymentTest is Test {
         assertFalse(d.rewards.emissionsActive());
         assertFalse(d.reserve.redemptionsActive());
         assertFalse(d.token.transfersEnabled());
+        assertEq(uint8(d.shares.phase()), 0);
+        assertEq(d.lpRewards.start(), 0);
+        assertEq(address(d.shares.incentives()), address(d.lpRewards));
+        assertEq(d.token.lpEmissionEscrow().distributor(), address(d.lpRewards));
         assertEq(d.custody.settlementController(), address(d.controller));
         assertEq(d.lp.reserve(), address(d.reserve));
         assertFalse(d.timelock.hasRole(d.timelock.DEFAULT_ADMIN_ROLE(), address(this)));

@@ -1,0 +1,119 @@
+name: Go engine
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Pricing, tokenomics and LP simulation checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Python research tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Finite-wallet endogenous LP scenario matrix
+        run: python3 scripts/simulate_lp_incentives.py --skip-retained-runs --output /tmp/fuse-lp-research
+      - name: Matched LP risk control and recovery simulation
+        run: python3 scripts/simulate_lp_risk.py --quick --days 125 --output /tmp/fuse-lp-risk
+      - name: LP recovery search and held-out validation
+        run: python3 scripts/optimize_lp_recovery.py --quick --output /tmp/fuse-lp-recovery
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fuse
+          POSTGRES_PASSWORD: fuse-test-only
+          POSTGRES_DB: fuse_engine_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: engine
+    env:
+      FUSE_TEST_DATABASE_URL: postgres://fuse:fuse-test-only@127.0.0.1:5432/fuse_engine_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: engine/go.mod
+          cache-dependency-path: engine/go.sum
+      - name: Formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        run: go vet ./...
+      - name: Race and PostgreSQL tests
+        run: go test -race ./... -count=1
+      - name: Deterministic command-file replay
+        run: |
+          go run ./cmd/fuse-engine -commands testdata/paper-commands.jsonl > /tmp/fuse-journal.jsonl
+          go run ./cmd/fuse-engine -replay /tmp/fuse-journal.jsonl
+      - name: Contract LP model and offline Go bridge integration
+        run: |
+          go build -o /tmp/fuse-research ./cmd/fuse-research
+          FUSE_RESEARCH_BINARY=/tmp/fuse-research python3 -m unittest discover -s ../scripts -p 'test_contract_lp_replay.py' -v
+
+  local-e2e:
+    name: Actual contracts and backend E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fuse
+          POSTGRES_PASSWORD: fuse-local-test-only
+          POSTGRES_DB: fuse_local_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      FUSE_LOCAL_DATABASE_URL: postgres://fuse:fuse-local-test-only@127.0.0.1:5432/fuse_local_e2e?sslmode=disable
+      FUSE_LOCAL_E2E_EVIDENCE: /tmp/fuse-recovery-e2e
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: engine/go.mod
+          cache-dependency-path: engine/go.sum
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+      - name: Deploy contracts and run complete local journey
+        run: ./scripts/local-e2e.sh
+      - name: Independent recovery arithmetic against native journal replay
+        run: |
+          cd engine
+          go build -o /tmp/fuse-engine-check ./cmd/fuse-engine
+          cd ..
+          python3 scripts/check_recovery.py /tmp/fuse-recovery-e2e --engine-verifier /tmp/fuse-engine-check --output /tmp/fuse-recovery-e2e/independent-arithmetic.json
+      - name: Retain recovery journey evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-contract-backend-evidence
+          path: /tmp/fuse-recovery-e2e
+          if-no-files-found: ignore

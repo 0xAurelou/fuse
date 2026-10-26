@@ -22,3 +22,7 @@ out-formal/
 formal-results/
 .venv-formal/
 __pycache__/
+
+# Local Anvil/PostgreSQL/backend runtime and development authorizations
+.local/
+engine/.local/

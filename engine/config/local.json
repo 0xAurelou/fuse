@@ -1,0 +1,61 @@
+{
+  "version": "local-anvil-v1-markets-v5",
+  "mode": "local",
+  "schedule": "independent",
+  "admission": "paired-local-receipt-v1",
+  "gap_rule": "pending-then-refund-v1",
+  "duration_ms": 30000,
+  "quote_ttl_ms": 2000,
+  "max_gap_ms": 8000,
+  "disagreement_ms": 1500,
+  "void_delay_ms": 15000,
+  "min_stake": 1000000,
+  "max_stake": 1000000000,
+  "lp_buffer": 100000000,
+  "max_exposure": 100000000000,
+  "max_account_exposure": 10000000000,
+  "max_active": 1000,
+  "model": {
+    "version": "local-fixture-width-v1-formula-v3",
+    "dataset": "research Brownian assumption, not empirical BTC oracle calibration",
+    "training_window": "untrained research baseline",
+    "out_of_sample_error": "unknown; continuous Brownian model must be validated against discrete oracle",
+    "valid_until": 1924992000000,
+    "max_width_bps": 500,
+    "dnt": {
+      "rule": "brownian-first-mode-v1",
+      "volatility_30s_ppm": 1000,
+      "house_edge_bps": 500
+    }
+  },
+  "product": "single-stage-v1",
+  "multipliers": [2, 5, 10, 25, 50, 100, 250, 1000, 10000],
+  "markets": {
+    "ETH": {
+      "version": "local-fixture-width-v1-formula-v3-eth",
+      "dataset": "ETH research Brownian assumption; not fitted or live prices",
+      "training_window": "untrained research baseline",
+      "out_of_sample_error": "unknown; continuous Brownian model must be validated against discrete oracle",
+      "valid_until": 1924992000000,
+      "max_width_bps": 500,
+      "dnt": {
+        "rule": "brownian-first-mode-v1",
+        "volatility_30s_ppm": 1500,
+        "house_edge_bps": 500
+      }
+    },
+    "HYPE": {
+      "version": "local-fixture-width-v1-formula-v3-hype",
+      "dataset": "HYPE research Brownian assumption; not fitted or live prices",
+      "training_window": "untrained research baseline",
+      "out_of_sample_error": "unknown; continuous Brownian model must be validated against discrete oracle",
+      "valid_until": 1924992000000,
+      "max_width_bps": 500,
+      "dnt": {
+        "rule": "brownian-first-mode-v1",
+        "volatility_30s_ppm": 3000,
+        "house_edge_bps": 500
+      }
+    }
+  }
+}

@@ -1,0 +1,191 @@
+FUSE 100 — Tokenomics Specification
+Version: 1.0 — design specification, October 25, 2026
+Status: Ready for engineering planning; key economic parameters remain provisional
+Scope: FUSE emission, mining incentives, supply, LP profit distribution, USDC redemption backing, transfer activation, holder behavior, controls and tests. No implementation code.
+1. Purpose and economic principles
+FUSE 100 consists of two linked products. FUSE trading is a single 30-second BTC double-no-touch stage with a user-selected whole-number total payout from 2× to 100×. A player risks USDC; survival automatically credits stake × multiplier, including the original stake, while a breach loses the stake. Higher payouts require narrower corridors. No ladder, rollover or post-win cashout is required. FUSE is a separate ERC-20 token earned through participation. It is backed by a segregated USDC reserve funded from eligible, realized LP trading profits.
+
+The user always wins or loses USDC in the trading game. FUSE is a separate mining reward, not the derivative payout currency. The LP pays winning traders in USDC; failed stage stakes accrue as LP trading PnL once settled. Winning traders and losing traders can both earn FUSE, but successful stages receive greater relative mining weight.
+
+Economic value comes from two different mechanisms:
+- New backing: Realized trading profit safely transferred from LP-owned USDC to the FUSE reserve. This is the only intended endogenous source of new backing in V0.
+- Redistributed backing: Redeemers burn tokens for less than their proportional backing. The forfeited USDC remains in the reserve and increases backing per remaining token. Redemption does not create new revenue.
+FUSE is not a conventional staking or dividend token. No fixed APY, token price, guaranteed appreciation, fixed redemption rate or governance rights are promised. The reserve is a contract-held asset pool, not an LP capital buffer.
+2. Parameter register
+The following distinguishes design commitments from candidates. None of the candidate numbers should be represented as an empirically established economic optimum.
+Parameter	Specification / working value	Status
+Max FUSE supply at genesis	1,000,000,000 FUSE, 18 decimals	Provisional supply design
+Additional minting	None after genesis	Proposed fixed rule
+Mining escrow	600,000,000 FUSE	Provisional allocation
+Other supply	400,000,000 FUSE in non-releasing treasury escrow until separately specified	Unresolved allocation; locked for safety
+Trading payout	USDC only	Agreed
+Mining rewards	FUSE only	Agreed
+Per-stage reward outcome weights	Survive = 1.00, fail = 0.20	Agreed starting point
+Extra streak bonus	None for V0	No streak progression in the single-stage product
+Emission shape	Front-loaded with time decay; test 10/20/22/30/35-day half-lives	Agreed direction; rate unresolved
+Example emission model	20-day half-life, 180-day allocation horizon	Modeling candidate only
+Token transferability	Disabled at launch; candidate day 8	Direction agreed; date provisional
+Redemption opening	Not before token transferability; separately announced and funded	Proposed activation condition
+Reserve contribution	Eligible realized LP profit only, governed by solvency	Agreed
+Initial maximum allocation	35% of eligible profit	Provisional cap
+Future maximum allocation	Potential 50% only after stress-tested capitalization	Unapproved extension
+LP release constraint	Post-transfer LP equity >= 2 × required capital	Provisional guard
+Redemption penalty	10% candidate; 20% original preferred alternative	Not finalized
+Redemption pricing	Non-overlapping fixed-price redemption epochs	Proposed mechanism
+Backing denominator	All outstanding FUSE, including both escrows	Required conservative treatment
+Barrier reference	HyperCore BTC oraclePx	Agreed; affects trading profit, not token claim mechanics
+Survival probability	Calibrate separately for each 2×–100× payout	No common 48% target or approved pricing calibration
+
+
+3. Supply, escrow and dilution
+At launch, the token is minted once into two constrained escrows: 600M for mining and 400M for a locked allocation whose beneficiaries and unlock policy have not been approved. The treasury escrow must have no general-purpose sweep, redemption or transfer privilege while unresolved. A future governance or treasury allocation requires a separate disclosed vesting and release specification.
+
+A fixed total supply by itself does not eliminate dilution from future releases. FUSE addresses that by always using the entire outstanding supply, including unreleased escrow balances, when displaying USDC backing per token. Unlocking already-minted FUSE therefore does not reduce the stated gross backing ratio. Burns reduce the denominator; no replacement tokens may be minted.
+
+The reserve benefits all eventual outstanding token claims proportionally. Early miners may therefore capture reserve funding produced by later traders; treasury releases could also capture a large portion of future backing. The simulator and product dashboard must show value allocation by cohort, not merely the aggregate reserve.
+
+The 400M escrow is not automatically a DAO treasury, team allocation, liquidity budget or market-making allocation. Its final disposition—vesting, permanent lock, partial burn or another publicly defined use—is a production tokenomics blocker, not something the engine may improvise.
+4. Mining: eligibility and earning FUSE
+Every accepted, funded and settled stage earns an outcome-weighted mining score. Mere quotes, wallet signatures, canceled instructions, rejected entries or simulated volume do not earn rewards. Each stage belongs to exactly one reward epoch. Players who survive are rewarded with a weight of 1.00; players whose stage is breached receive a weight of 0.20, before exposure normalization.
+
+The score should reflect genuine economically at-risk USDC, accepted duration, the committed payout obligation and a publicly versioned difficulty policy. The default stage duration is 30 seconds. No reward is paid for a stage whose outcome is invalidated under the published oracle-outage rule; the corresponding stake must be handled under that same rule.
+
+Mining allocation is pro rata inside a capped epoch, not a fixed token payout per winning trade. If two participants contribute equal effective exposure and one survives while the other fails, their score weights are 1.0 and 0.2. They receive approximately 83.33% and 16.67% of that epoch's distributed tokens, respectively, if no other participants score points. The 0.2 is not a promise that a loser always receives 20% of a winner's absolute FUSE.
+
+For V0 there is no streak bonus or compounding ladder. Every entry, including reuse of prior winnings, is an independent stage. Apply preannounced exposure normalization that is wallet-split neutral wherever possible. Multiplier choice alone must not multiply mining rewards: a 100× quote is not 100 times the deposited stake or exposure duration. Revalidate outcome weights and farming incentives by payout multiplier; uncalibrated pricing assumptions establish no economically fair mining rate. Arbitrary per-wallet ceilings without Sybil resistance are not an adequate fix.
+
+Rewards may be calculated offchain, but every epoch must publish a reproducible outcome-scoring manifest, total score, emission budget, Merkle distribution root and a finalization hash. The contract should enforce capped, once-only token claims; the operator remains trusted for reward-score correctness unless independently verified.
+5. Emission policy and decay
+The emission escrow holds at most 600M mining FUSE. Budgeted emissions are scheduled by epoch and decline over time. The epoch budget is an upper limit, not an obligation to distribute all tokens regardless of meaningful trading activity.
+
+For research, compare half-life curves and front-loading profiles under the same cumulative token cap. As an illustration only, distributing the 600M allowance over a 180-day exponentially declining schedule with a 20-day half-life would allocate approximately 129.5M FUSE in the first seven days and 388.6M by day 30 if every budget were used. This is aggressive and not approved; a 22-day half-life would distribute approximately 119.2M in week one.
+
+The engine should calculate used emissions as the smaller of the scheduled epoch ceiling and the activity-eligible budget. Activity utilization requires meaningful, final risk-bearing exposure; a nearly empty epoch must not hand its entire token budget to one low-cost farmer. Unused budgets must stay locked or expire under a prepublished policy; they cannot silently be added to a later reward epoch. Cumulative distributions must never exceed 600M FUSE.
+
+Test incentive adjustment for LP distress: emissions can be limited when the LP has insufficient capitalization, while already earned/vested FUSE must not be retroactively confiscated. Do not make privileged operator discretion an invisible parameter. A future 50% reserve-allocation policy cannot be combined with unbounded emission incentives that reduce LP trading capacity.
+
+Why decay: At launch, the token needs enough reward density to attract users; over time, continued trading must depend on the game itself rather than persistent issuance. Faster decay improves scarcity but can concentrate future backing among early miners. The optimization objective is durable profitable trading per emitted token, not maximal day-one volume.
+6. Activation, transferability and market launch
+Ignition: Initially users may earn and claim FUSE subject to transfer restrictions. Trading USDC and FUSE balances remain separate. No public redemptions or implied liquid market price exist yet.
+
+Activation candidate: Transfers can become permissionless around day 8, subject to a disclosed activation policy and security readiness. Exact dates and required conditions must be published before participants take risk. Transfer activation and redemption activation are separate decisions; the protocol must never advertise a live guaranteed floor when reserve redemption is not available.
+
+Redemption activation: Enable only after the reserve contract is funded, audited, and supplied with a disclosed penalty, epoch schedule and last-token residual policy. The UI must display whether redemption is active, when the next epoch opens, and the executable value under that epoch's terms.
+
+FUSE market price is set by external trading, not by reserve accounting. Secondary-market liquidity and speculative demand are not protocol-guaranteed. A holder can choose to hold, sell where bids exist, or redeem during a live epoch. Liquidity bootstrapping must have a separately approved budget and must not borrow from the FUSE reserve or LP collateral. Do not assume market buyers exist simply to make a simulation profitable.
+
+Delaying transfers can postpone a selloff rather than eliminate it. Stress-test 3/7/14/30-day unlocks, simultaneous farming cohort exits, shallow liquidity, unlocked token concentration, and trading collapse after launch.
+7. LP profit accounting and reserve funding
+User deposits, customer settlement liabilities, open-stage obligations, LP capital and FUSE redemption reserve are distinct economic claims. Only new, realized, eligible LP profit may be allocated to FUSE. Neither user deposits nor capital held to meet winning-stage liabilities may be treated as distributable income.
+
+Calculate distributable equity after reconciling customer balances, funded withdrawal claims, accepted stage payout obligations, LP contributions/withdrawals and fees. Use an adjusted LP economic high-water mark: losses must be recovered before previously reached economic capital is considered new profit again. The high-water mark adjusts for external LP capital flows and distributions, avoiding recycled accounting profits.
+
+Define E as reconciled LP equity before reserve transfer, C as conservatively required capital for outstanding exposure plus buffers, and SR = E / C. A proposed allocation function is:
+
+alpha(SR) = clamp(0.35 × (SR − 1.5) / 1.5, 0, 0.35).
+
+This gives 0% at 1.5× or below, approximately 11.7% at 2.0×, 23.3% at 2.5× and 35% at 3.0× or above. The candidate distribution for an epoch is bounded by both (alpha × genuinely new eligible profit) and max(0, E − 2C); enforce the capital requirement after the transfer. A separate worst-case correlated-payout stress test can reduce the allowed amount further.
+
+If the LP has fallen below its economic high-water mark, allocate zero until recovery. The optional profit accumulator is non-binding internal accounting, not a debt from LP to the FUSE reserve. Prior profits cannot be counted twice. A transfer only becomes FUSE backing when actual USDC reaches the separate RedemptionReserve contract.
+
+A possible 50% allocation cap later requires governance, independent risk validation, forward stress capital and a new parameter review; it is not automatically activated by an SR reading.
+8. Gross backing and executable redemption value
+Let R be segregated USDC available for new redemptions after subtracting unpaid approved redemption claims, and let S be the entire outstanding token supply including escrowed, circulating and already vested FUSE but excluding burned tokens.
+
+Gross backing per FUSE: B = R / S.
+
+Indicative net redemption price with fee f: P_redeem = (1 − f) × B, when redemption is open and subject to its current snapshot. This is not the secondary-market price, and it is not a guarantee that the market will buy FUSE at that price.
+
+Illustrations using 1B outstanding FUSE and a 10% haircut:
+Segregated reserve	Gross backing/FUSE	Net redemption/FUSE
+$1M	$0.0010	$0.0009
+$5M	$0.0050	$0.0045
+$10M	$0.0100	$0.0090
+$25M	$0.0250	$0.0225
+$50M	$0.0500	$0.0450
+
+
+To offer an immediately redeemable value of $0.01/FUSE with 1B supply and a 10% fee requires roughly $11.11M of segregated USDC (before settlement frictions). A high market price without equivalent backing does not make the redemption reserve deeper.
+
+Funding produces new backing; burns can increase backing per remaining token; unlocking already-counted escrow supply does not change the denominator. Backing can fail to grow in quiet or unprofitable periods, and net redemption value can be materially below gross backing.
+9. Redemption: haircut, burn and epoch integrity
+A holder may submit FUSE to the RedemptionReserve while an epoch is open. 100% of accepted tokens are burned; the holder receives their proportional gross backing less the preannounced fee. The deducted amount stays in the reserve for outstanding FUSE. The holder cannot cancel a finalized burn.
+
+Use non-overlapping redemption epochs with one fixed backing-per-token snapshot and one fee for all requests in that epoch. At epoch start, snapshot the free reserve R0, outstanding token supply S0 and haircut f. Every user's total request x in that epoch is priced using (x / S0) × R0 × (1 − f). Credit USDC owed to that user, reserve the claim, and burn their surrendered FUSE at finalization. Repeated requests by one account must be cumulatively reconciled so splitting a request does not change payout except bounded rounding. No repricing occurs inside the same epoch.
+
+The initial proposal was a 20% penalty; later economic analysis proposed 10% because higher penalties discourage use of the actual redemption floor. Neither figure has a measured holder equilibrium. Simulate 0/5/10/15/20/30%, including external bid depth, selling price impact, market-maker arbitrage and long-run holding incentives. No dynamic fee or privileged fee waiver in V0.
+
+Illustration: with $1M available reserve, 1B outstanding supply and a 10% fee, redeeming 100M FUSE in an epoch pays $90,000. After that epoch, $910,000 backs 900M outstanding FUSE, increasing gross backing per token from $0.001000 to about $0.0010111 (+1.11%). At 20%, the payment is $80,000 and gross backing rises to about $0.0010222 (+2.22%). This creates no new USDC.
+
+Reserve funding received while an epoch is open is allocated to later snapshots. Accrued but unpaid redemption claims are always reserved and excluded from free backing. Requests cannot exceed tokens actually tendered. Epochs may not overlap. If outstanding token supply reaches zero, the leftover penalty reserve has no remaining token beneficiary; last-supply redemption must remain disabled until a transparent final-residual rule is approved and implemented. This is a genuine unresolved design decision.
+
+Avoid the earlier immediate-withdrawal formula x × (R/S) × (1 − f) while recomputing R/S between withdrawals: splitting one redemption into multiple transactions changes total payouts. The epoch snapshot is deliberately chosen to make the haircut flat and order-independent within that epoch.
+10. Holder and farmer equilibrium
+FUSE participants optimize total economic return, not just USDC trading PnL. Model each user's expected USDC stage PnL + realizable FUSE proceeds − execution/withdrawal costs. For FUSE, realizable value depends on actual secondary-market bids and available, time-constrained redemption. Do not value mined tokens at an imagined future listing price.
+
+Miners who accept negative-USDC expected value can persist only if rewards compensate them or if they value the gameplay itself. However, the reserve receives only a fraction of LP profits. When farmers are the source of those profits, redistributing a fraction back to the token usually cannot offset all their combined trading losses. The reserve cannot recycle the same losses into full miner compensation.
+
+Under the generous simplifying assumptions of equal average house edge on organic and mining turnover, aggregate miners obtaining fraction zeta of eventual intrinsic reserve value, an LP allocation fraction alpha, and redemption penalty f, a necessary, not sufficient condition to recover miner losses from intrinsic redemption proceeds is:
+
+organic_turnover / mining_turnover >= 1 / [(1 − f) × zeta × alpha] − 1.
+
+At alpha=35%, f=20% and zeta=100%, that lower bound is approximately 2.57×. At zeta=20% it is approximately 16.86×. Conditions such as capital retention, emissions dilution, illiquid secondary markets and unequal edge can make the true requirement more demanding. This is a diagnostic bound, not a predictive price model.
+
+Track value distribution between day-one miners, later miners, users who sold, buyers who held, treasury escrow and remaining holders. Measure how much new LP-generated USDC ultimately accrues to each cohort, net of their original losses and market purchases.
+11. Strategic and manipulation defenses
+Prevent or quantify: deliberate losing-stage farming, entry gaming near observation timestamps, reward concentration by whales, splitting across wallets, collusive volume, synthetic/invalid risk exposure, front-running emission epochs, pre-transfer off-market claims, treasury release surprise, oracle outages and last-supply reserve extraction.
+
+Mining is issued only against finalized stages with demonstrated locked financial exposure. Fixed epoch ceilings and utilization requirements cap rewards. Reward-schedule changes must be delayed and publicly visible. Users must not select an unobserved or retrospectively updated oracle price to backdate risk. If a stage is voided because the canonical oracle stream is not provable, apply the trading refund rule and no outcome-mining reward for that stage.
+
+The LP is always the counterparty to stage payouts; there is no additional FUSE mint created by a trader's USDC loss. Token emissions are a distribution of the finite escrow, not an accounting entry equal to trading losses.
+12. Data, simulations and optimization
+The economic calibration must jointly optimize barrier-survival targets, LP reserves, emissions, mining score weights, redemption fees and holder actions; optimizing them individually can produce a profitable-looking token that bankrupts the LP or a profitable LP that funds negligible backing.
+
+Required experiment inputs: real HyperCore BTC oracle observation sequences (or explicitly labeled proxies); stage barrier calibration and observed conditional survival; overlapping correlated players and LP liabilities; activity and retention stresses informed by Papertrade's observed TVL profile (not assumed transferable derivatives volumes); multiple user behavior cohorts; alternative demand elasticity and market liquidity assumptions; and forward LP capital constraints.
+
+Evaluate at least: multiplier-conditioned survival and corridor calibration across 2×–100× (the historical fixed-payout 40–54% experiments do not validate these prices); allocation caps 0/10/35/50/70%; emission half-lives 10/20/22/30/35 days; redemption penalties 0/5/10/15/20/30%; transfer activation at 3/7/14/30 days; initial LP $100k/$500k/$1M/$5M/$10M; real-demand and no-farming scenarios; correlated winner stress; drawdown and oracle interruption.
+
+Optimize for a feasible frontier, not a single illusory universal optimum: preserve fully backed accepted USDC payouts; cap LP drawdown and limit rejected trades; maximize reserve growth per organic at-risk dollar; avoid miner dependence and extreme ownership concentration; keep redemption practically accessible.
+
+The earlier corrected 44–50% survival range and 48% compromise are synthetic demand/path results, not historical HyperCore oracle calibration. Likewise the 35% LP allocation and 10% fee are candidates, not observed optimal settings. Papertrade launch activity demonstrates possible volatility of demand, not FUSE's user conversion or expected token price.
+13. Accounting invariants and disclosures
+1. FUSE genesis supply <=1B and no post-genesis minting; burns are final.
+2. Lifetime claimed mining FUSE <=600M and no epoch exceeds its finalized budget.
+3. The 400M unresolved allocation stays locked until a separate approved release policy exists.
+4. Total-supply-denominator backing always includes all outstanding escrow tokens.
+5. Reserve USDC is never reused to collateralize FUSE RUN stage payouts.
+6. A reserve transfer requires realized LP profit above adjusted HWM and post-transfer risk capital.
+7. An LP realized profit dollar cannot be distributed twice.
+8. Each accepted redemption burns exactly the tendered FUSE, creates a fully reserved USDC claim, and can be paid at most once.
+9. All users in one redemption epoch receive the identical quoted rate subject to deterministic rounding.
+10. No unsettled user withdrawal entitlement or open stage payout is reclassified as LP distributable profit.
+11. No token price, redemption date, yield, transferability date or backing growth is guaranteed unless enforceable and explicitly published.
+12. Mining manifests, reserve inflows/outflows, supply changes, epoch requests and fee policies remain publicly auditable.
+The UI should report: outstanding total FUSE, circulating/unlocked FUSE, locked escrow by purpose, daily and cumulative emissions, circulating concentration, LP equity and stress capacity, eligible profit, reserve contributions, free USDC reserve, unpaid redemption claims, gross backing, current/next epoch net redeemable backing, FUSE secondary-market bid (if any), and cumulative penalty-retained USDC. Avoid a single ambiguous metric labeled floor.
+14. Failure handling
+LP drawdown: Stop LP-to-reserve transfers. Enforce accepted liabilities, reduce new trade exposure and optionally cap unearned future mining according to a published rule. Never pull already-segregated reserve USDC back into the LP.
+
+Oracle outage: Apply previously fixed stage void/failure rules. Do not mint successful-stage mining rewards from ambiguous outcomes. Record the affected stages publicly.
+
+Engine failure or inconsistent reward root: Pause new reward epoch publication. Preserve published claims. Reproduce scoring from immutable trade/oracle records before recovering.
+
+Reserve underfunding: Do not open redemption epochs, promise floor payments, or accrue unfunded claims. Already approved, reserved redemption claims retain their senior entitlement to reserve USDC.
+
+No users / low activity: Epoch distributions decay or go unallocated according to fixed utilization policy; no requirement to mint tokens to satisfy a marketing schedule.
+
+Market-price crash: No automatic reserve-funded buyback. A secondary-market price below the executable net redemption value may create arbitrage, but only if redemptions are actually open, claims are funded and transaction/slippage costs allow it.
+15. V0 scope and engineering handoff
+The Go engine owns accepted-stage and outcome events, at-risk exposure scores, epoch reward manifests, LP accounting reconciliation, eligibility/HWM computation, and proposed reserve transfers. The onchain contracts own supply and burn limits, emission escrow, reward budgets and claims, isolated USDC reserve custody, redemption-epoch snapshots and liabilities, and real USDC transfers. The engine cannot arbitrarily mint FUSE or send reserve USDC back to LP capital.
+
+No V0 staking APY, governance utility, guaranteed buyback, jackpot, liquidity-mining multiplier or FUSE-denominated derivative payout. Those would obscure the two simple economic mechanisms under validation.
+
+Before production activation, finalize: disposition of the 400M escrow; exact emission utilization/expiry rule; launch and redemption activation disclosures; redemption haircut; last-token residual policy; high-water-mark and operator-authority verification; and verified risk-capital constraints on reserve transfers. Independent tests must reconcile USDC and FUSE conservation under randomized users, heavy correlation, concurrent redemptions, refunds, settlement delays and reorgs.
+16. Working launch configuration — candidate to beat
+- Trading: USDC-denominated, HyperCore BTC oracle; one 30-second stage; integer total payouts 2×–100×; automatic win credit. No multiplier is calibrated by the shipped paper/local Brownian model. Historical 48% ladder research is not validation of single-stage prices.
+- Supply: 1B max, 600M mining escrow, 400M locked unresolved escrow; all 1B initially counted in backing ratio.
+- Mining: 1.0 survive / 0.2 fail, only funded settled risk; no extra streak bonus in V0; capped scheduled epochs, optional volume-utilization ceiling.
+- Emission research baseline: 20-day half-life with explicit finite horizon and no undisclosed catch-up; compare slower 22–35-day alternatives to reduce early concentration.
+- Reserve: Profit HWM + solvency-gated distribution, 35% max candidate; potential 50% only after verified excess LP capital.
+- Redemption: Fixed-price non-overlapping epochs, 100% tender burn, 10% candidate haircut vs original 20% alternative; outstanding claim segregation.
+- Activation: Transferability initially locked, candidate day 8; redemptions only once reserve is actually funded and epoch terms published.
+Acceptance condition: The configuration is viable only if no-farmer organic demand can support LP solvency and meaningful reserve growth while users willingly trade at corridors whose oracle-based survival rate is confirmed out of sample. Until then, this document is a precise implementable mechanism with provisional parameters—not proof of a sustainable economic equilibrium.

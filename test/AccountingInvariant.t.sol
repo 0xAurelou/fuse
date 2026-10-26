@@ -23,6 +23,7 @@ contract AccountingHandler is FUSEFixture {
         _startRewards();
         _reward(alice, 100_000_000 ether);
         _reward(bob, 100_000_000 ether);
+        _enableTransfers();
         reserve.activateRedemptions();
         vm.prank(alice);
         token.approve(address(reserve), type(uint256).max);
@@ -85,8 +86,7 @@ contract AccountingHandler is FUSEFixture {
         int256 netProfit = lp.cumulativeRealizedProfitUSDC();
         uint256 consumed = lp.consumedProfitHWMUSDC();
         if (netProfit <= 0 || uint256(netProfit) <= consumed || controller.latestEpoch() == 0) return;
-        uint256 limit = (uint256(netProfit) - consumed) * lp.reserveAllocationBps() / 10_000;
-        if (limit > lp.accountedBalance()) limit = lp.accountedBalance();
+        (uint256 limit,) = lp.reserveAllowance(lp.requiredCapitalUSDC());
         if (limit == 0) return;
         _fundReserve(bound(rawAmount, 1, limit));
         assertGe(lp.consumedProfitHWMUSDC(), lastConsumedHWM);

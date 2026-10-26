@@ -10,8 +10,10 @@ import {EmissionEscrow, TreasuryEscrow} from "./AllocationEscrows.sol";
 contract FUSEToken is ERC20, Module {
     uint256 public constant GENESIS_SUPPLY = 1_000_000_000 ether;
     uint256 public constant EMISSION_ALLOCATION = 600_000_000 ether;
-    uint256 public constant TREASURY_ALLOCATION = 400_000_000 ether;
+    uint256 public constant TREASURY_ALLOCATION = 350_000_000 ether;
+    uint256 public constant LP_ALLOCATION = 50_000_000 ether;
     EmissionEscrow public immutable emissionEscrow;
+    EmissionEscrow public immutable lpEmissionEscrow;
     TreasuryEscrow public immutable treasuryEscrow;
     uint256 public immutable transferActivationDelay;
     address public redemptionReserve;
@@ -28,9 +30,11 @@ contract FUSEToken is ERC20, Module {
         if (transferActivationDelay_ == 0) revert InvalidConfiguration();
         transferActivationDelay = transferActivationDelay_;
         emissionEscrow = new EmissionEscrow(access_, IERC20(address(this)));
+        lpEmissionEscrow = new EmissionEscrow(access_, IERC20(address(this)));
         treasuryEscrow = new TreasuryEscrow(access_, IERC20(address(this)));
         _mint(address(emissionEscrow), EMISSION_ALLOCATION);
         _mint(address(treasuryEscrow), TREASURY_ALLOCATION);
+        _mint(address(lpEmissionEscrow), LP_ALLOCATION);
     }
 
     function setRedemptionReserve(address reserve) external onlyGovernance {
@@ -60,7 +64,10 @@ contract FUSEToken is ERC20, Module {
     }
 
     function _update(address from, address to, uint256 amount) internal override {
-        if (from != address(0) && to != address(0) && from != address(emissionEscrow) && !transfersEnabled) {
+        if (
+            from != address(0) && to != address(0) && from != address(emissionEscrow)
+                && from != address(lpEmissionEscrow) && !transfersEnabled
+        ) {
             revert TransfersDisabled();
         }
         super._update(from, to, amount);

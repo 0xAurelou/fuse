@@ -13,6 +13,8 @@ import {FUSEToken} from "../src/FUSEToken.sol";
 import {RewardDistributor} from "../src/RewardDistributor.sol";
 import {RedemptionReserve} from "../src/RedemptionReserve.sol";
 import {ISettlementView} from "../src/interfaces/ISettlementView.sol";
+import {LPShareVault, ILPCapitalRewards} from "../src/LPShareVault.sol";
+import {LPIncentiveDistributor} from "../src/LPIncentiveDistributor.sol";
 
 /// @notice Deploys unconfigured modules and emits the exact timelock bootstrap batch.
 /// Does not activate mining, redemption or token transfers. Never broadcasts implicitly.
@@ -27,6 +29,8 @@ contract Deploy is Script {
         FUSEToken token;
         RewardDistributor rewards;
         RedemptionReserve reserve;
+        LPShareVault shares;
+        LPIncentiveDistributor lpRewards;
     }
 
     struct Authorities {
@@ -53,6 +57,7 @@ contract Deploy is Script {
     event BootstrapBatch(
         address[] targets, uint256[] values, bytes[] payloads, bytes32 predecessor, bytes32 salt, uint256 delay
     );
+    event LPModulesDeployed(address shareVault, address incentives, address emissionEscrow);
 
     function run() external returns (Deployment memory deployment) {
         require(block.chainid == 998 || block.chainid == 999 || block.chainid == 31337, "unsupported chain");
@@ -88,6 +93,9 @@ contract Deploy is Script {
             address(deployment.rewards),
             address(deployment.reserve)
         );
+        emit LPModulesDeployed(
+            address(deployment.shares), address(deployment.lpRewards), address(deployment.token.lpEmissionEscrow())
+        );
         (address[] memory targets, uint256[] memory values, bytes[] memory payloads) =
             bootstrapBatch(deployment, authorities);
         emit BootstrapBatch(targets, values, payloads, bytes32(0), keccak256("FUSE_V0_BOOTSTRAP"), governanceDelay);
@@ -112,6 +120,8 @@ contract Deploy is Script {
         d.token = new FUSEToken(d.access, transferDelay);
         d.rewards = new RewardDistributor(d.access, d.token);
         d.reserve = new RedemptionReserve(d.access, usdc, d.token, address(d.lp));
+        d.shares = d.lp.shareVault();
+        d.lpRewards = new LPIncentiveDistributor(d.access, d.token, d.shares);
     }
 
     function bootstrapBatch(Deployment memory d, Authorities memory a)
@@ -125,9 +135,9 @@ contract Deploy is Script {
                 && a.lpProvider != address(0),
             "invalid authorities"
         );
-        targets = new address[](14);
-        values = new uint256[](14);
-        payloads = new bytes[](14);
+        targets = new address[](18);
+        values = new uint256[](18);
+        payloads = new bytes[](18);
         targets[0] = address(d.custody);
         payloads[0] = abi.encodeCall(d.custody.configure, (address(d.controller), address(d.gateway), address(d.lp)));
         targets[1] = address(d.lp);
@@ -152,5 +162,13 @@ contract Deploy is Script {
         payloads[11] = abi.encodeCall(d.access.grantRole, (d.access.GUARDIAN(), address(d.timelock)));
         payloads[12] = abi.encodeCall(d.access.pauseTrading, ());
         payloads[13] = abi.encodeCall(d.access.revokeRole, (d.access.GUARDIAN(), address(d.timelock)));
+        targets[14] = address(d.token.lpEmissionEscrow());
+        payloads[14] = abi.encodeCall(d.token.lpEmissionEscrow().setDistributor, (address(d.lpRewards)));
+        targets[15] = address(d.shares);
+        payloads[15] = abi.encodeCall(d.shares.setIncentives, (ILPCapitalRewards(address(d.lpRewards))));
+        targets[16] = address(d.access);
+        payloads[16] = abi.encodeCall(d.access.grantRole, (d.access.LP_REWARD_PUBLISHER(), a.publisher));
+        targets[17] = address(d.access);
+        payloads[17] = abi.encodeCall(d.access.grantRole, (d.access.GUARDIAN(), address(d.controller)));
     }
 }

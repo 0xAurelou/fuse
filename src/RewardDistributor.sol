@@ -23,8 +23,10 @@ contract RewardDistributor is Module, ReentrancyGuard {
     uint64 public latestEpoch;
     uint64 public emissionStart;
     uint64 public epochDuration;
+    uint64 public emissionEnd;
     uint16 public decayBps;
-    uint256 public nextEpochCap;
+    uint256 public initialEpochCap;
+    uint64 public lastEmissionSlot;
     uint256 public totalAllocated;
     uint256 public totalClaimed;
     bool public emissionsActive;
@@ -52,17 +54,54 @@ contract RewardDistributor is Module, ReentrancyGuard {
         ) revert InvalidConfiguration();
         emissionStart = start;
         epochDuration = duration;
-        nextEpochCap = initialBudget;
+        initialEpochCap = initialBudget;
         decayBps = decay;
         emit EmissionScheduleConfigured(start, duration, initialBudget, decay);
     }
 
+    function configureEmissionHorizon(uint64 end) external onlyGovernance {
+        if (emissionStart == 0 || emissionEnd != 0 || emissionsActive || end <= emissionStart) {
+            revert InvalidConfiguration();
+        }
+        emissionEnd = end;
+    }
+
     function activateEmissions() external onlyGovernance {
-        if (emissionStart == 0 || escrow.distributor() != address(this) || emissionsActive) {
+        if (emissionStart == 0 || emissionEnd == 0 || escrow.distributor() != address(this) || emissionsActive) {
             revert InvalidConfiguration();
         }
         emissionsActive = true;
         emit EmissionsActivated();
+    }
+
+    function currentEmissionSlot() public view returns (uint64) {
+        if (emissionStart == 0 || block.timestamp < emissionStart || block.timestamp >= emissionEnd) return 0;
+        uint256 slot = (block.timestamp - emissionStart) / epochDuration + 1;
+        if (slot > type(uint64).max) return type(uint64).max;
+        return uint64(slot);
+    }
+
+    function capAtSlot(uint64 slot) public view returns (uint256 cap) {
+        if (slot == 0 || emissionEnd == 0 || uint256(emissionStart) + uint256(slot - 1) * epochDuration >= emissionEnd) return 0;
+        cap = initialEpochCap;
+        // Monotonic floor-rounded exponentiation avoids unbounded catch-up loops.
+        uint256 factor = 1e18;
+        uint256 base = uint256(10_000 - decayBps) * 1e14;
+        uint256 exponent = slot - 1;
+        while (exponent != 0) {
+            if (exponent & 1 != 0) factor = Math.mulDiv(factor, base, 1e18);
+            base = Math.mulDiv(base, base, 1e18);
+            exponent >>= 1;
+        }
+        return Math.mulDiv(cap, factor, 1e18);
+    }
+
+    function nextEpochCap() public view returns (uint256) {
+        if (emissionEnd != 0 && block.timestamp >= emissionEnd) return 0;
+        uint64 slot = currentEmissionSlot();
+        if (lastEmissionSlot == type(uint64).max) return 0;
+        if (slot <= lastEmissionSlot) slot = lastEmissionSlot + 1;
+        return capAtSlot(slot);
     }
 
     function publishEpoch(uint64 epoch, bytes32 merkleRoot, uint256 budget, bytes32 manifestHash)
@@ -70,15 +109,17 @@ contract RewardDistributor is Module, ReentrancyGuard {
         onlyRole(access.EMISSION_PUBLISHER())
         whenTradingActive
     {
+        uint64 slot = currentEmissionSlot();
         if (
-            !emissionsActive || epoch != latestEpoch + 1 || merkleRoot == bytes32(0) || manifestHash == bytes32(0)
-                || budget == 0 || budget > nextEpochCap || totalAllocated + budget > token.EMISSION_ALLOCATION()
+            !emissionsActive || slot == 0 || slot <= lastEmissionSlot || epoch != latestEpoch + 1
+                || merkleRoot == bytes32(0) || manifestHash == bytes32(0) || budget == 0 || budget > capAtSlot(slot)
+                || totalAllocated + budget > token.EMISSION_ALLOCATION()
                 || block.timestamp < uint256(emissionStart) + uint256(epoch - 1) * epochDuration
         ) revert InvalidEpoch();
         latestEpoch = epoch;
         totalAllocated += budget;
         epochs[epoch] = RewardEpoch(merkleRoot, manifestHash, budget, 0);
-        nextEpochCap = Math.mulDiv(nextEpochCap, 10_000 - decayBps, 10_000);
+        lastEmissionSlot = slot;
         emit EpochPublished(epoch, merkleRoot, budget, manifestHash);
     }
 

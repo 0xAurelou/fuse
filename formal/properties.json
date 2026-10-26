@@ -69,6 +69,15 @@
     },
     {
       "function": "check_reserve_cannot_underwrite_lp_payout(uint64)"
+    },
+    {
+      "function": "check_lp_deposit_issues_proportional_shares(address)"
+    },
+    {
+      "function": "check_lp_redeem_cannot_skip_request(uint64)"
+    },
+    {
+      "function": "check_lp_profit_allocation_capped_at_35_percent(uint16)"
     }
   ],
   "math_lemmas": [
@@ -78,6 +87,7 @@
     "single_floor_rounding_is_strictly_less_than_one_atomic_unit",
     "splitting_reserve_distributions_cannot_save_consumed_profit",
     "two_account_discounted_redemptions_remain_backed",
-    "deducting_prior_liabilities_preserves_backing_after_claims"
+    "deducting_prior_liabilities_preserves_backing_after_claims",
+    "fair_nav_deposits_cannot_dilute_existing_lp_equity"
   ]
 }

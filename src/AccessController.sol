@@ -12,6 +12,7 @@ contract AccessController is AccessControl {
     bytes32 public constant WITHDRAWAL_SIGNER = keccak256("WITHDRAWAL_SIGNER");
     bytes32 public constant EMISSION_PUBLISHER = keccak256("EMISSION_PUBLISHER");
     bytes32 public constant REDEMPTION_SCHEDULER = keccak256("REDEMPTION_SCHEDULER");
+    bytes32 public constant LP_REWARD_PUBLISHER = keccak256("LP_REWARD_PUBLISHER");
     bytes32 public constant LP_PROVIDER = keccak256("LP_PROVIDER");
     bytes32 public constant GUARDIAN = keccak256("GUARDIAN");
 
@@ -19,6 +20,8 @@ contract AccessController is AccessControl {
     mapping(bytes32 => address) public signer;
     uint256 public signatureVersion = 1;
     bool public tradingPaused;
+    uint64 public pausedAt;
+    uint256 public pauseNonce;
 
     error InvalidAuthority();
     error InvalidSignature();
@@ -54,12 +57,15 @@ contract AccessController is AccessControl {
     /// @notice A guardian can stop new activity, never funded withdrawals or refunds.
     function pauseTrading() external onlyRole(GUARDIAN) {
         tradingPaused = true;
+        pausedAt = uint64(block.timestamp);
+        ++pauseNonce;
         emit TradingPauseChanged(true);
     }
 
     function resumeTrading() external {
         if (msg.sender != governance) revert Unauthorized();
         tradingPaused = false;
+        ++pauseNonce;
         emit TradingPauseChanged(false);
     }
 }

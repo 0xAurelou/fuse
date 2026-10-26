@@ -33,7 +33,7 @@ contract EmissionEscrow is Module {
 contract TreasuryEscrow is Module, ReentrancyGuard {
     using SafeERC20 for IERC20;
     IERC20 public immutable token;
-    uint256 public constant ALLOCATION = 400_000_000 ether;
+    uint256 public constant ALLOCATION = 350_000_000 ether;
     bytes32 public allocationRoot;
     bytes32 public manifestHash;
     uint256 public totalReleased;

@@ -69,6 +69,12 @@ def main():
         paid >= 0, paid <= prior + new,
     ], And(prior + new - paid >= 0, prior + new - paid <= balance - paid)))
 
+    assets, supply, contribution, virtual = Ints("lp_assets lp_supply contribution virtual_shares")
+    minted = contribution * (supply + virtual) / (assets + 1)
+    results.append(prove("fair_nav_deposits_cannot_dilute_existing_lp_equity", [
+        assets >= 0, supply >= 0, contribution > 0, virtual > 0,
+    ], (assets + contribution + 1) * (supply + virtual) >= (assets + 1) * (supply + minted + virtual)))
+
     output = Path(__file__).resolve().parents[1] / "formal-results/math.json"
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps({"solver": get_version_string(), "lemmas": results}, indent=2) + "\n")

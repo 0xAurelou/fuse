@@ -15,6 +15,7 @@ contract TokenRewardsReserveTest is FUSEFixture {
     }
 
     function _open(uint16 penalty) internal {
+        _enableTransfers();
         if (!reserve.redemptionsActive()) reserve.activateRedemptions();
         reserve.openRedemptionEpoch(uint64(block.timestamp), uint64(block.timestamp + 1 days), penalty);
     }
@@ -37,7 +38,7 @@ contract TokenRewardsReserveTest is FUSEFixture {
     function testFixedSupplyEscrowsAndTransferTimelock() public {
         assertEq(token.totalSupply(), 1_000_000_000 ether);
         assertEq(token.balanceOf(address(token.emissionEscrow())), 600_000_000 ether);
-        assertEq(token.balanceOf(address(token.treasuryEscrow())), 400_000_000 ether);
+        assertEq(token.balanceOf(address(token.treasuryEscrow())), 350_000_000 ether);
         _startRewards();
         _reward(alice, 100 ether);
         vm.prank(alice);
@@ -168,7 +169,7 @@ contract TokenRewardsReserveTest is FUSEFixture {
         _settle(-1000e6, 0, _ids(id));
         LPVault.ReserveAuthorization memory authorization = _reserveAuthorization(350e6);
         authorization.minLPCapitalUSDC = usdc.balanceOf(address(lp));
-        _expectFundingRevert(LPVault.InsufficientCapital.selector, authorization);
+        _expectFundingRevert(LPVault.InvalidReserveAuthorization.selector, authorization);
         authorization.minLPCapitalUSDC = 0;
         bytes32 digest = lp.hashReserveAuthorization(authorization);
         lp.fundFUSEReserve(authorization, _sign(SETTLEMENT_KEY, digest), _sign(RISK_KEY, digest));
@@ -232,6 +233,7 @@ contract TokenRewardsReserveTest is FUSEFixture {
         _seedReserve(1000e6);
         _startRewards();
         _reward(alice, 100 ether);
+        _enableTransfers();
         uint64 start = uint64(block.timestamp + 1 hours);
         uint64 end = start + 1 days;
         vm.expectRevert(RedemptionReserve.InvalidEpoch.selector);

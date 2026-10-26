@@ -1,0 +1,16 @@
+{
+ "version":"paper-v1", "mode":"paper", "schedule":"independent",
+ "admission":"paired-local-receipt-v1", "gap_rule":"pending-then-refund-v1",
+ "duration_ms":30000, "quote_ttl_ms":2000, "max_gap_ms":8000,
+ "disagreement_ms":1500, "void_delay_ms":15000,
+ "min_stake":1000000, "max_stake":1000000000,
+ "lp_buffer":100000000, "max_exposure":100000000000,
+ "max_account_exposure":10000000000, "max_active":1000,
+ "payout_table":[1000000000,1778279410,3162277660,5623413251,10000000000,17782794100,31622776602,56234132519,100000000000],
+ "model":{
+   "version":"paper-range-v1", "dataset":"paper fixture / live canonical receipts",
+   "training_window":"untrained research baseline", "out_of_sample_error":"unknown; not calibrated",
+   "valid_until":1924992000000, "base_width_bps":50, "max_width_bps":500,
+   "control_width_bps":50, "max_drift_bps":100, "volatility_factor":2
+ }
+}

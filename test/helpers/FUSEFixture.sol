@@ -182,8 +182,16 @@ abstract contract FUSEFixture is Test {
         lp.fundFUSEReserve(authorization, _sign(SETTLEMENT_KEY, digest), _sign(RISK_KEY, digest));
     }
 
+    function _enableTransfers() internal {
+        if (token.transfersEnabled()) return;
+        if (token.transfersEnableAfter() == 0) token.scheduleEnableTransfers();
+        if (block.timestamp < token.transfersEnableAfter()) vm.warp(token.transfersEnableAfter());
+        token.enableTransfers();
+    }
+
     function _startRewards() internal {
         rewards.configureEmissionSchedule(uint64(block.timestamp), 1 days, token.EMISSION_ALLOCATION(), 1000);
+        rewards.configureEmissionHorizon(uint64(block.timestamp + 180 days));
         rewards.activateEmissions();
     }
 

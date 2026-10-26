@@ -1,6 +1,6 @@
 # Formal verification
 
-The suite combines **bounded symbolic execution of production contract bytecode** with **unbounded integer arithmetic lemmas**. It supplements the Foundry unit, fuzz and stateful invariant suites. Production Solidity is unchanged by this addition.
+The suite combines **bounded symbolic execution of production contract bytecode** with **unbounded integer arithmetic lemmas**. It supplements the Foundry unit, fuzz and stateful invariant suites. The registry currently contains 26 bytecode checks and eight arithmetic lemmas.
 
 The bytecode proofs use [Halmos](https://github.com/a16z/halmos) 0.2.6 and its pinned Z3 4.12.6 solver. Foundry's formal profile compiles Solidity 0.8.24 with the repository's Paris target and optimizer settings. CI pins Foundry 1.5.1. This is a collection of specific bounded proofs, not a claim of full protocol verification.
 
@@ -56,12 +56,17 @@ In the table, a lower bound of 1 means one atomic unit; upper bounds use whole U
 | `redemption_burn_and_backing` | Redemption burns exact supply, accrues the fixed price, remains funded and cannot claim twice; 10,000,007 FUSE for every admissible account address |
 | `redemption_splitting_same_account` | Two requests accrue the same total as their combined request; 10,000,007 and 20,000,009 FUSE, both request orders and every admissible account address |
 | `next_redemption_epoch_excludes_prior_claims` | Subsequent snapshot deducts unpaid liabilities and uses the post-burn total supply; 10,000,007 FUSE for every admissible account address |
-| `treasury_locked_without_approved_policy` | Transfer activation alone cannot release unallocated treasury; proposed amount 1–400M FUSE |
+| `treasury_locked_without_approved_policy` | Transfer activation alone cannot release unallocated treasury; proposed amount 1–350M FUSE |
 | `transfer_activation_delay_and_irreversibility` | Activation fails before two days, succeeds at the deadline and cannot be rescheduled; elapsed seconds 0–172799 |
 | `reserve_funding_preserves_required_capital` | Funding fails atomically if it would breach the signed minimum; proposed amount 1–350 USDC after 1000 USDC profit |
 | `reserve_cannot_underwrite_lp_payout` | Additional reserve assets cannot cover an LP payout shortfall; reserve donation 1–100,000 USDC |
+| `lp_deposit_issues_proportional_shares` | A 100 USDC legacy entry issues exactly 100 fLP and conserves equity/supply for every provider except zero, harness, LP and share vault |
+| `lp_redeem_cannot_skip_request` | Redeeming without a funded asynchronous request cannot move cash or create an exit liability; share input 1–100,000 × 10^6 atomic share units |
+| `lp_profit_allocation_capped_at_35_percent` | Every uint16 governance allocation input above 3500 bps reverts; all lower values are stored exactly |
 
-All USDC bounds above include every atomic unit, and FUSE reward bounds include every token atomic unit. The redemption bytecode proofs quantify account addresses and both request orders at the fixed amounts stated above; they do **not** quantify all token amounts. Admissible accounts exclude zero, the harness, the LP/custody/reserve modules and the two escrows. Their prices include fractional USDC atomic units, exercising floor rounding. The fixtures use the genesis supply denominator, 350 USDC backing and a 10% penalty. Unrestricted numeric bit-vector queries exceeded the solver budget; the separate integer lemmas below cover general arithmetic without treating those incomplete EVM runs as proofs. Subsequent price evolution across arbitrary histories is not exhaustively checked.
+All USDC bounds above include every atomic unit, and FUSE reward bounds include every token atomic unit. The redemption bytecode proofs quantify account addresses and both request orders at the fixed amounts stated above; they do **not** quantify all token amounts. Admissible redemption accounts exclude zero, the harness, the LP/custody/reserve modules and the trader/treasury escrows (see the harness for exact exclusions). Their prices include fractional USDC atomic units, exercising floor rounding. The fixtures use the genesis supply denominator, 350 USDC backing and a 10% penalty. Unrestricted numeric bit-vector queries exceeded the solver budget; the separate integer lemmas below cover general arithmetic without treating those incomplete EVM runs as proofs. Subsequent price evolution across arbitrary histories is not exhaustively checked.
+
+The fixture starts in the protocol-funded phase, retaining the legacy gross-profit reserve policy. The three LP checks above are limited to their stated transitions; they do not prove the entire external-LP lifecycle, fee crystallization or incentive integrator. `test/LPParticipation.t.sol` exercises those behaviors, including independent risk approval, liquidity-window invalidation, loss recovery, time weighting and vesting. `test/LPAccountingInvariant.t.sol` mixes external deposits, signed settlements, queued exits, partial claims and fee funding, asserting cash/share/liability conservation and a nondecreasing per-share high-water mark. These randomized checks complement the bounded proofs; they are not universal proofs over transaction histories.
 
 ## Integer lemmas
 
@@ -74,6 +79,7 @@ All USDC bounds above include every atomic unit, and FUSE reward bounds include 
 5. Splitting reserve distributions cannot reduce the consumed-profit ceiling.
 6. Two accounts whose total requested amount does not exceed supply cannot accrue more than the backing reserve, for every penalty from 0 to 10000 bps. The arithmetic can be extended to more accounts by induction; this script checks two accounts explicitly.
 7. Subtracting prior liabilities before reserving new claims preserves aggregate backing as funded claims are paid.
+8. Floor-priced deposits using the vault's virtual assets/shares cannot dilute existing LP equity at fair NAV, for arbitrary positive denominators and nonnegative contributions.
 
 These are proofs of the stated arithmetic model. They do not establish that arbitrary EVM histories or overflow behavior implement that model. The bytecode checks and existing randomized tests separately connect the formulas to contract behavior within their stated domains.
 

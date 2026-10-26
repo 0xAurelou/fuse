@@ -1,0 +1,4 @@
+{
+ "Version":"paper-mining-v2", "ExposureRule":"linear-stake-time-v2", "ActivityRate":"100000000000000000000", "SurvivedWeightBPS":10000, "FailedWeightBPS":2000,
+ "MaxStakeUSDC":1000000000, "StreakBonusBPS":[0,0,0,0,0,0,0,0], "MaxBonusBPS":0
+}

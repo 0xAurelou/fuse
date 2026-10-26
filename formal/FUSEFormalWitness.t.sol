@@ -104,4 +104,16 @@ contract FormalWitness is Test {
     function test_check_reserve_cannot_underwrite_lp_payout() public {
         proof.check_reserve_cannot_underwrite_lp_payout(100e6);
     }
+
+    function test_check_lp_deposit_issues_proportional_shares() public {
+        proof.check_lp_deposit_issues_proportional_shares(address(0xB0B));
+    }
+
+    function test_check_lp_redeem_cannot_skip_request() public {
+        proof.check_lp_redeem_cannot_skip_request(100e6);
+    }
+
+    function test_check_lp_profit_allocation_capped_at_35_percent() public {
+        proof.check_lp_profit_allocation_capped_at_35_percent(5000);
+    }
 }

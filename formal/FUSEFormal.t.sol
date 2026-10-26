@@ -14,6 +14,7 @@ import {RedemptionReserve} from "../src/RedemptionReserve.sol";
 import {ISettlementView} from "../src/interfaces/ISettlementView.sol";
 import {Module} from "../src/common/Module.sol";
 import {TreasuryEscrow} from "../src/AllocationEscrows.sol";
+import {LPShareVault} from "../src/LPShareVault.sol";
 
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
@@ -396,6 +397,11 @@ contract FUSEFormal is FUSEFixture {
         _executeReport(_report(-1000e6, 0, _ids(id)), _ids(id));
         _fundReserveApproved(350e6);
         _grantReward(alice, rewardAmount);
+        if (!token.transfersEnabled()) {
+            token.scheduleEnableTransfers();
+            vm.warp(token.transfersEnableAfter());
+            token.enableTransfers();
+        }
         reserve.activateRedemptions();
         reserve.openRedemptionEpoch(uint64(block.timestamp), uint64(block.timestamp + 1 days), 1000);
         vm.prank(alice);
@@ -513,7 +519,7 @@ contract FUSEFormal is FUSEFixture {
         _mustReject(
             address(lp),
             abi.encodeCall(lp.fundFUSEReserve, (a, bytes(""), bytes(""))),
-            LPVault.InsufficientCapital.selector
+            LPVault.InvalidReserveAuthorization.selector
         );
         assert(usdc.balanceOf(address(lp)) == beforeLP);
         assert(usdc.balanceOf(address(reserve)) == 0);
@@ -530,5 +536,49 @@ contract FUSEFormal is FUSEFixture {
         assert(usdc.balanceOf(address(reserve)) == reserveDonation);
         assert(usdc.balanceOf(address(lp)) == balanceLP);
         assert(controller.latestEpoch() == 0);
+    }
+
+    function check_lp_deposit_issues_proportional_shares(address provider) public {
+        LPShareVault shares = lp.shareVault();
+        vm.assume(
+            provider != address(0) && provider != address(this) && provider != address(lp)
+                && provider != address(shares)
+        );
+        uint256 beforeSupply = shares.totalSupply();
+        uint256 beforeAssets = shares.totalAssets();
+        access.grantRole(access.LP_PROVIDER(), provider);
+        usdc.mint(provider, 100e6);
+        vm.prank(provider);
+        usdc.approve(address(lp), 100e6);
+        vm.prank(provider);
+        _mustCall(address(lp), abi.encodeCall(lp.depositLP, (100e6)));
+        assert(shares.balanceOf(provider) == 100 ether);
+        assert(shares.totalAssets() == beforeAssets + 100e6);
+        assert(shares.totalSupply() == beforeSupply + 100 ether);
+    }
+
+    function check_lp_redeem_cannot_skip_request(uint64 amount) public {
+        _amount(amount);
+        LPShareVault shares = lp.shareVault();
+        uint256 assets = lp.accountedBalance();
+        _mustReject(
+            address(shares),
+            abi.encodeCall(shares.redeem, (amount, alice, address(this))),
+            LPShareVault.InvalidRequest.selector
+        );
+        assert(lp.accountedBalance() == assets);
+        assert(lp.reservedExitUSDC() == 0);
+    }
+
+    function check_lp_profit_allocation_capped_at_35_percent(uint16 bps) public {
+        if (bps <= 3500) {
+            _mustCall(address(lp), abi.encodeCall(lp.setReserveAllocationBps, (bps)));
+            assert(lp.reserveAllocationBps() == bps);
+        } else {
+            _mustReject(
+                address(lp), abi.encodeCall(lp.setReserveAllocationBps, (bps)), Module.InvalidConfiguration.selector
+            );
+            assert(lp.reserveAllocationBps() == 3500);
+        }
     }
 }

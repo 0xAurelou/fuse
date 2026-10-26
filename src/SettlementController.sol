@@ -70,7 +70,7 @@ contract SettlementController is Module, EIP712, ReentrancyGuard {
         uint256[] calldata depositIds,
         bytes calldata settlementSignature,
         bytes calldata riskSignature
-    ) external nonReentrant whenTradingActive {
+    ) public nonReentrant whenTradingActive {
         if (
             report.epoch != latestEpoch + 1 || report.priorRoot != currentRoot || report.newRoot == bytes32(0)
                 || report.newRoot == currentRoot || report.journalHash == bytes32(0)
@@ -93,6 +93,7 @@ contract SettlementController is Module, EIP712, ReentrancyGuard {
             lpVault.receiveNetTraderLosses(report.epoch, amount);
         }
         custody.finalizeLiability(report.customerLiabilityUSDC);
+        lpVault.finalizeLiquidityCheckpoint(report.epoch, report.asOfTimestamp, report.reportedMaxOpenExposureUSDC);
         lpVault.finalizeCapital(report.reportedRequiredLPCapitalUSDC, report.realizedProfitHWMUSDC);
         latestEpoch = report.epoch;
         lastSequence = report.toSequence;
@@ -108,5 +109,19 @@ contract SettlementController is Module, EIP712, ReentrancyGuard {
             report.netTraderPnLUSDC,
             report.customerLiabilityUSDC
         );
+    }
+
+    /// @notice Guardian opens a liquidity window atomically with a zero-exposure checkpoint.
+    /// The engine must quiesce acceptance before signing this accounting checkpoint.
+    function settleAndPause(
+        EpochSettlement calldata report,
+        uint256[] calldata depositIds,
+        bytes calldata settlementSignature,
+        bytes calldata riskSignature
+    ) external onlyRole(access.GUARDIAN()) {
+        if (report.reportedMaxOpenExposureUSDC != 0) revert InvalidCheckpoint();
+        settle(report, depositIds, settlementSignature, riskSignature);
+        access.pauseTrading();
+        lpVault.openLiquidityWindow();
     }
 }

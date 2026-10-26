@@ -1,0 +1,103 @@
+{
+  "image": "nova.png",
+  "width": 2048,
+  "height": 2048,
+  "frames": {
+    "head-open": {
+      "x": 12,
+      "y": 12,
+      "width": 230,
+      "height": 303
+    },
+    "head-closed": {
+      "x": 524,
+      "y": 12,
+      "width": 230,
+      "height": 303
+    },
+    "torso": {
+      "x": 1036,
+      "y": 12,
+      "width": 378,
+      "height": 454
+    },
+    "pelvis": {
+      "x": 1548,
+      "y": 12,
+      "width": 210,
+      "height": 258
+    },
+    "arm-left": {
+      "x": 12,
+      "y": 524,
+      "width": 79,
+      "height": 295
+    },
+    "forearm-left": {
+      "x": 524,
+      "y": 524,
+      "width": 69,
+      "height": 299
+    },
+    "arm-right": {
+      "x": 1036,
+      "y": 524,
+      "width": 82,
+      "height": 295
+    },
+    "forearm-right": {
+      "x": 1548,
+      "y": 524,
+      "width": 71,
+      "height": 297
+    },
+    "thigh-left": {
+      "x": 12,
+      "y": 1036,
+      "width": 126,
+      "height": 294
+    },
+    "shin-left": {
+      "x": 524,
+      "y": 1036,
+      "width": 125,
+      "height": 306
+    },
+    "thigh-right": {
+      "x": 1036,
+      "y": 1036,
+      "width": 131,
+      "height": 294
+    },
+    "shin-right": {
+      "x": 1548,
+      "y": 1036,
+      "width": 134,
+      "height": 306
+    },
+    "back-hair": {
+      "x": 12,
+      "y": 1548,
+      "width": 233,
+      "height": 318
+    },
+    "hair-left": {
+      "x": 524,
+      "y": 1548,
+      "width": 247,
+      "height": 318
+    },
+    "hair-right": {
+      "x": 1036,
+      "y": 1548,
+      "width": 91,
+      "height": 319
+    },
+    "coat-tail": {
+      "x": 1548,
+      "y": 1548,
+      "width": 113,
+      "height": 250
+    }
+  }
+}

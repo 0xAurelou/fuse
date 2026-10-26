@@ -36,11 +36,13 @@ contract RedemptionReserve is Module, ReentrancyGuard {
     uint256 public totalFundedUSDC;
     bool public redemptionsActive;
     mapping(uint64 => RedemptionEpoch) public epochs;
+    mapping(uint64 => bool) public epochStarted;
     mapping(uint64 => mapping(address => RedemptionRequest)) public requests;
 
     error InvalidEpoch();
     error InvalidRequest();
     event RedemptionsActivated();
+    event RedemptionEpochScheduled(uint64 indexed epoch, uint64 start, uint64 end, uint16 penaltyBps);
     event ReserveFunded(uint256 amount);
     event RedemptionEpochOpened(
         uint64 indexed epoch, uint64 start, uint64 end, uint16 penaltyBps, uint256 supply, uint256 reserve
@@ -79,14 +81,33 @@ contract RedemptionReserve is Module, ReentrancyGuard {
     {
         uint256 supply = token.totalSupply();
         if (
-            !redemptionsActive || start < block.timestamp || end <= start || penaltyBps > 10_000 || supply == 0
-                || (latestEpoch != 0 && block.timestamp < epochs[latestEpoch].end)
+            !redemptionsActive || !token.transfersEnabled() || start < block.timestamp || end <= start
+                || penaltyBps > 10_000 || supply == 0 || (latestEpoch != 0 && block.timestamp < epochs[latestEpoch].end)
+        ) revert InvalidEpoch();
+        uint64 epoch = ++latestEpoch;
+        epochs[epoch] = RedemptionEpoch(epoch, start, end, penaltyBps, 0, 0, 0, 0);
+        emit RedemptionEpochScheduled(epoch, start, end, penaltyBps);
+        if (start == block.timestamp) _startEpoch();
+    }
+
+    function startEpoch() external nonReentrant whenTradingActive {
+        _startEpoch();
+    }
+
+    function _startEpoch() private {
+        RedemptionEpoch storage epoch = epochs[latestEpoch];
+        if (
+            latestEpoch == 0 || epochStarted[latestEpoch] || block.timestamp < epoch.start
+                || block.timestamp >= epoch.end
         ) revert InvalidEpoch();
         uint256 available = usdc.balanceOf(address(this)) - outstandingUSDC;
-        if (available == 0) revert InvalidEpoch();
-        uint64 epoch = ++latestEpoch;
-        epochs[epoch] = RedemptionEpoch(epoch, start, end, penaltyBps, supply, available, 0, 0);
-        emit RedemptionEpochOpened(epoch, start, end, penaltyBps, supply, available);
+        uint256 supply = token.totalSupply();
+        if (available == 0 || supply == 0 || !token.transfersEnabled()) revert InvalidEpoch();
+        epoch.start = uint64(block.timestamp);
+        epoch.supplySnapshot = supply;
+        epoch.availableReserveUSDC = available;
+        epochStarted[latestEpoch] = true;
+        emit RedemptionEpochOpened(latestEpoch, epoch.start, epoch.end, epoch.penaltyBps, supply, available);
     }
 
     function requestRedeem(uint256 amount) external nonReentrant whenTradingActive {
@@ -94,6 +115,9 @@ contract RedemptionReserve is Module, ReentrancyGuard {
         if (latestEpoch == 0 || amount == 0 || block.timestamp < epoch.start || block.timestamp >= epoch.end) {
             revert InvalidRequest();
         }
+        if (!epochStarted[latestEpoch]) _startEpoch();
+        // No policy exists for penalty residue after the final outstanding burn.
+        if (amount >= token.totalSupply()) revert InvalidRequest();
         RedemptionRequest storage request = requests[latestEpoch][msg.sender];
         uint256 cumulative = request.requestedFUSE + amount;
         if (epoch.requestedFUSE + amount > epoch.supplySnapshot) revert InvalidRequest();

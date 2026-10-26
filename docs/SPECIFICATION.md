@@ -9,7 +9,11 @@
 
 FUSE uses an operator-secured deterministic trading engine. Smart contracts provide USDC custody, LP funding, net settlement, withdrawal claims, FUSE issuance, mining distributions and reserve-backed redemptions.
 
-Every accepted Fuse remains an offchain obligation. Its settlement reference is the HyperCore BTC oracle, not BBO or mark price.
+The primary trading product is one 30-second BTC double-no-touch stage with a selected integer total payout from 2× to 100×. Payout includes the original stake and is credited automatically on survival. Contracts continue settling aggregate USDC liabilities; no new per-stage onchain transaction or contract ABI change is required for multiplier selection.
+
+Optional [Degen mode](DEGEN_MODE.md) exposes three independent BTC, HYPE and ETH stages, with one active or pending stage per account per asset. Stakes, quotes, barriers and outcomes are separate; account balances, risk limits and LP capacity are shared.
+
+Every accepted Fuse remains an offchain obligation. Its settlement reference is the selected asset's HyperCore oracle, not BBO or mark price.
 
 The initial contract system is **not trustless**. A checkpoint verifies that a state was committed, not that the trading engine calculated it correctly.
 

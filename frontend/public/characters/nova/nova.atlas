@@ -1,0 +1,117 @@
+nova.png
+size: 2048, 2048
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+head-open
+  rotate: false
+  xy: 12, 12
+  size: 230, 303
+  orig: 230, 303
+  offset: 0, 0
+  index: -1
+head-closed
+  rotate: false
+  xy: 524, 12
+  size: 230, 303
+  orig: 230, 303
+  offset: 0, 0
+  index: -1
+torso
+  rotate: false
+  xy: 1036, 12
+  size: 378, 454
+  orig: 378, 454
+  offset: 0, 0
+  index: -1
+pelvis
+  rotate: false
+  xy: 1548, 12
+  size: 210, 258
+  orig: 210, 258
+  offset: 0, 0
+  index: -1
+arm-left
+  rotate: false
+  xy: 12, 524
+  size: 79, 295
+  orig: 79, 295
+  offset: 0, 0
+  index: -1
+forearm-left
+  rotate: false
+  xy: 524, 524
+  size: 69, 299
+  orig: 69, 299
+  offset: 0, 0
+  index: -1
+arm-right
+  rotate: false
+  xy: 1036, 524
+  size: 82, 295
+  orig: 82, 295
+  offset: 0, 0
+  index: -1
+forearm-right
+  rotate: false
+  xy: 1548, 524
+  size: 71, 297
+  orig: 71, 297
+  offset: 0, 0
+  index: -1
+thigh-left
+  rotate: false
+  xy: 12, 1036
+  size: 126, 294
+  orig: 126, 294
+  offset: 0, 0
+  index: -1
+shin-left
+  rotate: false
+  xy: 524, 1036
+  size: 125, 306
+  orig: 125, 306
+  offset: 0, 0
+  index: -1
+thigh-right
+  rotate: false
+  xy: 1036, 1036
+  size: 131, 294
+  orig: 131, 294
+  offset: 0, 0
+  index: -1
+shin-right
+  rotate: false
+  xy: 1548, 1036
+  size: 134, 306
+  orig: 134, 306
+  offset: 0, 0
+  index: -1
+back-hair
+  rotate: false
+  xy: 12, 1548
+  size: 233, 318
+  orig: 233, 318
+  offset: 0, 0
+  index: -1
+hair-left
+  rotate: false
+  xy: 524, 1548
+  size: 247, 318
+  orig: 247, 318
+  offset: 0, 0
+  index: -1
+hair-right
+  rotate: false
+  xy: 1036, 1548
+  size: 91, 319
+  orig: 91, 319
+  offset: 0, 0
+  index: -1
+coat-tail
+  rotate: false
+  xy: 1548, 1548
+  size: 113, 250
+  orig: 113, 250
+  offset: 0, 0
+  index: -1
