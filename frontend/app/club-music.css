@@ -1,0 +1,22 @@
+.club-music{display:flex;align-items:center;gap:20px;margin:10px 0;padding:10px;border:1px solid #38415e;border-radius:6px;background:#12172f;color:#a5afc6}
+.club-music-player{width:240px;height:200px;flex:none;background:#0a1028}
+.club-music-player iframe{display:block;width:100%;height:100%;border:0}
+.club-music-info{display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:11px;line-height:1.5}
+.club-music-label{font:9px monospace;letter-spacing:1.4px;color:#d5f77f}
+.club-music-info strong{font-size:16px;font-weight:600;color:#eeedf8}
+.club-music-info a{color:#c6afd9;text-underline-offset:3px}
+.club-music-start{padding:7px 11px;border:1px solid #b77c9e;border-radius:4px;background:#33253f;color:#f7bad9;font:inherit;cursor:pointer}
+.club-music-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px}
+.club-music-change,.club-music-reset{font:inherit;cursor:pointer}
+.club-music-change{padding:6px 10px;border:1px solid #63517b;border-radius:4px;background:#221b35;color:#e5d9f5}
+.club-music-reset{padding:6px 0;border:0;background:transparent;color:#c6afd9;text-decoration:underline;text-underline-offset:3px}
+.club-music-editor{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;padding-top:2px}
+.club-music-editor label{color:#eeedf8}
+.club-music-editor input{box-sizing:border-box;width:100%;min-width:0;padding:9px;border:1px solid #63517b;border-radius:4px;background:#0a1028;color:#eeedf8;font:inherit;font-size:16px}
+.club-music-editor input::placeholder{color:#8992ae}
+.club-music-editor input[aria-invalid=true]{border-color:#ff9dab}
+.club-music-editor .club-music-error{color:#ffb6c0}
+.club-music button:focus-visible,.club-music input:focus-visible{outline:2px solid #d5f77f;outline-offset:3px}
+.club-music-info{min-width:0;overflow-wrap:anywhere}
+@media(max-width:650px){.club-music{gap:12px;padding:8px}.club-music-player{width:200px}.club-music-info{gap:8px;font-size:10px}.club-music-info strong{font-size:13px}.club-music-label{font-size:8px;letter-spacing:.5px}}
+@media(max-width:520px){.club-music{flex-direction:column;align-items:stretch}.club-music-player{align-self:center}.club-music-info{gap:6px;width:100%;align-self:center}}

@@ -5,7 +5,7 @@ import type { AvatarReaction } from './avatar-events';
 import { solveArmChain, type Point3 } from './vtuber-ik';
 import { buildCodeCustomDemo, VICTORIA_PROFILE, type CloneProfile, type CodeCustomDemo } from './avatar-code-demo';
 
-export type CharacterOptions = { playing: boolean; reaction: AvatarReaction | null; neutral?: boolean };
+export type CharacterOptions = { playing: boolean; reaction: AvatarReaction | null };
 export type CharacterRenderer = { setOptions: (options: CharacterOptions) => void; destroy: () => void };
 
 type ThreeModule = typeof import('three');
@@ -13,7 +13,6 @@ type ThreeModule = typeof import('three');
 type Rig = {
   avatar: VRM;
   bones: Map<string, Object3D>;
-  restRotations: Map<string, import('three').Euler>;
   hips: Object3D | null;
   hipsOrigin: Vector3 | null;
   torso: Object3D | null;
@@ -118,7 +117,6 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
     const hips = vrm.humanoid.getNormalizedBoneNode('hips');
     return {
       avatar: vrm, bones,
-      restRotations: new Map([...bones].map(([name, node]) => [name, node.rotation.clone()] as const)),
       hips: hips ?? null, hipsOrigin: hips?.position.clone() || null,
       torso: bones.get('chest') ?? bones.get('upperChest') ?? bones.get('spine') ?? null,
       baseTurn,
@@ -129,16 +127,64 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
 
   const bounds = new THREE.Box3().setFromObject(avatar.scene);
   const height = bounds.max.y - bounds.min.y;
-  const centerY = bounds.max.y - height * .215;
+  const centerY = bounds.max.y - height * .225;
   // Extra transparent room on the left contains the dance gestures while the
   // body stays near the right edge, like a streamer overlay.
-  const frameHeight = height * .52;
+  const frameHeight = height * .55;
   camera.position.set(-height * .06, centerY, 3);
   camera.lookAt(-height * .06, centerY, 0);
   const rigs = [
     makeRig(avatar, 0, { cloth: '#101826', rim: '#7fb2ff', hair: '#5b8def', hairShade: '#33549e', phones: '#7fd4ff' }, VICTORIA_PROFILE),
   ];
   for (const rig of rigs) addHeadphones(rig.avatar, height, '#7fd4ff');
+
+  // Breast grab: pointer-down near a bust bone (raycast proximity) starts a
+  // hold; dragging moves the spring support so the breast follows with lag,
+  // and releasing lets the springs jiggle back with the drag momentum.
+  const raycaster = new THREE.Raycaster();
+  const bustBones = [
+    avatar.scene.getObjectByName('J_Sec_L_Bust1'),
+    avatar.scene.getObjectByName('J_Sec_R_Bust1'),
+  ];
+  let grabSide = -1, grabAnchorX = 0, grabAnchorY = 0, grabY = 0, grabX = 0;
+  function ndcOf(event: PointerEvent) {
+    const rect = canvas.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return null;
+    return new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+  }
+  function bustSideAt(event: PointerEvent) {
+    const ndc = ndcOf(event);
+    if (!ndc) return -1;
+    raycaster.setFromCamera(ndc, camera);
+    let best = -1, bestDist = height * .09;
+    bustBones.forEach((bone, i) => {
+      if (!bone) return;
+      const dist = raycaster.ray.distanceToPoint(bone.getWorldPosition(new THREE.Vector3()));
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    });
+    return best;
+  }
+  function pointerDown(event: PointerEvent) {
+    if (grabSide >= 0 || !options.playing || reduced.matches) return;
+    if ((event.target as HTMLElement | null)?.closest?.('.vtuber-toolbar, .vtuber-credits')) return;
+    const side = bustSideAt(event);
+    if (side < 0) return;
+    grabSide = side;
+    grabAnchorX = event.clientX;
+    grabAnchorY = event.clientY;
+    grabX = 0; grabY = 0;
+    canvas.style.cursor = '';
+    document.body.style.cursor = 'grabbing';
+    // The canvas passes pointer events through to the desk by design; a
+    // capture-phase stop keeps a grab from also clicking whatever is behind.
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  function releaseGrab() {
+    grabSide = -1;
+    grabX = 0; grabY = 0;
+    document.body.style.cursor = '';
+  }
 
   function rotateDirection(bone: Object3D, current: Vector3, desired: Vector3) {
     if (current.lengthSq() < 1e-10 || desired.lengthSq() < 1e-10) return;
@@ -176,18 +222,8 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
     }
   }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  // Neutral stance: arms hang at the sides via the IK solver rather than the
-  // model's stiff authored rest pose.
-  const NEUTRAL_ARMS: Pick<ReturnType<typeof vtuberPose>, 'hands' | 'point' | 'pointUp'> = {
-    hands: { left: [-.155, -.40, .04], right: [.155, -.40, .04] },
-    point: 0, pointUp: 0,
-  };
   let options = { ...initial }, elapsed = 0, alive = true, frame = 0, previous = 0;
   let pointerX = 0, pointerY = 0, lookX = 0, lookY = 0;
-  // Crossfade between the dance and the neutral inspection pose: 0 = dance,
-  // 1 = neutral. Eased per frame so toggling never snaps.
-  let poseMix = 0;
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   function draw(dt: number) {
     if (!alive) return;
     const active = options.playing && !reduced.matches;
@@ -195,44 +231,34 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
     const blend = dt ? 1 - Math.exp(-dt * 5) : 1;
     lookX += ((active ? pointerX : 0) - lookX) * blend;
     lookY += ((active ? pointerY : 0) - lookY) * blend;
-    if (dt) poseMix += ((options.neutral ? 1 : 0) - poseMix) * Math.min(1, dt * 5);
-    const mix = poseMix;
-    const reaction = options.neutral ? null : options.reaction;
+    const reaction = options.reaction;
     const age = reaction ? Math.max(0, (Date.now() - reaction.at) / 1000) : 0;
     const motion = !reduced.matches && reaction && age < REACTION_SECONDS[reaction.kind] ? reaction.kind : 'idle';
     const pose = vtuberPose(motion, reduced.matches ? 0 : elapsed, lookX, lookY, age);
-    const excitement = motion === 'win' ? reactionEnvelope('win', age) * (1 - mix) : 0;
-    // IK arm targets blend between the dance's authored hands and the
-    // arms-at-sides neutral stance, so elbows interpolate naturally.
-    const hands = {
-      left: pose.hands.left.map((value, i) => lerp(value, NEUTRAL_ARMS.hands.left[i], mix)) as [number, number, number],
-      right: pose.hands.right.map((value, i) => lerp(value, NEUTRAL_ARMS.hands.right[i], mix)) as [number, number, number],
-    };
-    const armPose = { hands, point: lerp(pose.point, 0, mix), pointUp: lerp(pose.pointUp, 0, mix) };
+    const excitement = motion === 'win' ? reactionEnvelope('win', age) : 0;
     for (const rig of rigs) {
-      rig.avatar.scene.rotation.y = rig.baseTurn + pose.turn * (1 - mix);
-      for (const [name, node] of rig.bones) {
-        const rest = rig.restRotations.get(name);
-        const target = pose.rotations[name] as [number, number, number] | undefined;
-        if (!rest) continue;
-        if (!target) { node.rotation.copy(rest); continue; }
-        node.rotation.set(
-          lerp(target[0], rest.x, mix),
-          lerp(target[1], rest.y, mix),
-          lerp(target[2], rest.z, mix),
-        );
+      rig.avatar.scene.rotation.y = rig.baseTurn + pose.turn;
+      for (const [name, rotation] of Object.entries(pose.rotations)) {
+        const node = rig.bones.get(name);
+        if (node) node.rotation.set(...rotation);
       }
-      if (rig.hips && rig.hipsOrigin) rig.hips.position.set(rig.hipsOrigin.x + pose.x * (1 - mix), rig.hipsOrigin.y + pose.y * (1 - mix), rig.hipsOrigin.z);
-      poseArms(rig, armPose);
-      rig.avatar.expressionManager?.setValue('happy', pose.happy * (1 - mix));
-      rig.avatar.expressionManager?.setValue('sad', pose.sad * (1 - mix));
-      rig.avatar.expressionManager?.setValue('angry', pose.angry * (1 - mix));
-      rig.avatar.expressionManager?.setValue('blink', pose.blink * (1 - mix));
-      rig.avatar.expressionManager?.setValue('blinkRight', pose.wink * (1 - mix));
-      rig.avatar.expressionManager?.setValue('oh', Math.min(1, pose.mouthOh + rig.faceOh) * (1 - mix));
-      rig.avatar.expressionManager?.setValue('aa', pose.mouthAa * (1 - mix));
+      if (rig.hips && rig.hipsOrigin) rig.hips.position.set(rig.hipsOrigin.x + pose.x, rig.hipsOrigin.y + pose.y, rig.hipsOrigin.z);
+      // IK owns the arms only for win/loss gestures; the classic dance drives
+      // arms by baked rotations (always connected to the torso chain).
+      if (pose.ikArms > 1e-3) poseArms(rig, pose);
+      rig.avatar.expressionManager?.setValue('happy', pose.happy);
+      rig.avatar.expressionManager?.setValue('sad', pose.sad);
+      rig.avatar.expressionManager?.setValue('angry', pose.angry);
+      rig.avatar.expressionManager?.setValue('blink', pose.blink);
+      rig.avatar.expressionManager?.setValue('blinkRight', pose.wink);
+      rig.avatar.expressionManager?.setValue('oh', Math.min(1, pose.mouthOh + rig.faceOh));
+      rig.avatar.expressionManager?.setValue('aa', pose.mouthAa);
       rig.avatar.update(dt);
-      rig.demo?.update(dt, { id: reaction?.id ?? null, excitement, pulse: reduced.matches ? 0 : dancePhase(elapsed).pulse * (1 - mix) });
+      rig.demo?.update(dt, {
+        id: reaction?.id ?? null, excitement,
+        pulse: reduced.matches ? 0 : dancePhase(elapsed).pulse,
+        grab: grabSide >= 0 ? { side: grabSide, y: grabY, x: grabX } : null,
+      });
     }
     renderer.render(scene, camera);
   }
@@ -260,10 +286,21 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
   function pointer(event: PointerEvent) {
     pointerX = Math.max(-1, Math.min(1, event.clientX / window.innerWidth * 2 - 1));
     pointerY = Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1));
+    if (grabSide >= 0) {
+      // Drag in world units: vertical pull, horizontal sway; the springs
+      // chase the moving support and overshoot on release.
+      const worldPerPixel = frameHeight / Math.max(1, canvas.clientHeight);
+      grabY = Math.max(-height * .035, Math.min(height * .035, (grabAnchorY - event.clientY) * worldPerPixel));
+      grabX = Math.max(-height * .07, Math.min(height * .07, (event.clientX - grabAnchorX) * worldPerPixel));
+      return;
+    }
+    document.body.style.cursor = options.playing && !reduced.matches && bustSideAt(event) >= 0 ? 'grab' : '';
   }
-  function resetPointer() { pointerX = 0; pointerY = 0; }
+  function resetPointer() { pointerX = 0; pointerY = 0; releaseGrab(); }
   const observer = new ResizeObserver(resize); observer.observe(host);
   window.addEventListener('pointermove', pointer, { passive: true });
+  window.addEventListener('pointerdown', pointerDown, { capture: true });
+  window.addEventListener('pointerup', releaseGrab);
   window.addEventListener('blur', resetPointer);
   document.addEventListener('visibilitychange', activity);
   reduced.addEventListener('change', activity);
@@ -278,6 +315,7 @@ export async function createCharacterRenderer(host: HTMLDivElement, initial: Cha
       if (!alive) return;
       alive = false; cancelAnimationFrame(frame); observer.disconnect();
       window.removeEventListener('pointermove', pointer); window.removeEventListener('blur', resetPointer);
+      window.removeEventListener('pointerdown', pointerDown, { capture: true }); window.removeEventListener('pointerup', releaseGrab);
       document.removeEventListener('visibilitychange', activity); reduced.removeEventListener('change', activity);
       for (const rig of rigs) VRMUtils.deepDispose(rig.avatar.scene);
       renderer.dispose(); renderer.forceContextLoss(); canvas.remove();

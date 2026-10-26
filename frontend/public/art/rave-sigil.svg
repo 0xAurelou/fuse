@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" fill="none">
+  <defs>
+    <linearGradient id="neon" x1="100" y1="80" x2="700" y2="730" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d9ff43"/>
+      <stop offset=".36" stop-color="#46ffe7"/>
+      <stop offset=".7" stop-color="#a36bff"/>
+      <stop offset="1" stop-color="#ff41d1"/>
+    </linearGradient>
+    <path id="blade" d="M400 83C382 150 325 175 346 234L373 201L363 275L400 244L437 275L427 201L454 234C475 175 418 150 400 83ZM400 120L400 221M368 174L384 193M432 174L416 193"/>
+    <path id="hook" d="M400 16L414 49L400 42L386 49ZM400 55L400 70M400 282L420 321L400 309L380 321Z"/>
+    <g id="rays">
+      <use href="#blade"/><use href="#hook"/>
+      <use href="#blade" transform="rotate(30 400 400)"/><use href="#hook" transform="rotate(30 400 400)"/>
+      <use href="#blade" transform="rotate(60 400 400)"/><use href="#hook" transform="rotate(60 400 400)"/>
+      <use href="#blade" transform="rotate(90 400 400)"/><use href="#hook" transform="rotate(90 400 400)"/>
+      <use href="#blade" transform="rotate(120 400 400)"/><use href="#hook" transform="rotate(120 400 400)"/>
+      <use href="#blade" transform="rotate(150 400 400)"/><use href="#hook" transform="rotate(150 400 400)"/>
+      <use href="#blade" transform="rotate(180 400 400)"/><use href="#hook" transform="rotate(180 400 400)"/>
+      <use href="#blade" transform="rotate(210 400 400)"/><use href="#hook" transform="rotate(210 400 400)"/>
+      <use href="#blade" transform="rotate(240 400 400)"/><use href="#hook" transform="rotate(240 400 400)"/>
+      <use href="#blade" transform="rotate(270 400 400)"/><use href="#hook" transform="rotate(270 400 400)"/>
+      <use href="#blade" transform="rotate(300 400 400)"/><use href="#hook" transform="rotate(300 400 400)"/>
+      <use href="#blade" transform="rotate(330 400 400)"/><use href="#hook" transform="rotate(330 400 400)"/>
+    </g>
+    <g id="geometry">
+      <use href="#rays"/>
+      <circle cx="400" cy="400" r="352" stroke-dasharray="2 15"/>
+      <circle cx="400" cy="400" r="326" stroke-dasharray="50 35"/>
+      <circle cx="400" cy="400" r="159"/>
+      <circle cx="400" cy="400" r="150" stroke-dasharray="3 10"/>
+      <path d="M400 305L482 447H318ZM400 495L318 353H482Z"/>
+      <path d="M400 328L462 364V436L400 472L338 436V364ZM400 350L443 375V425L400 450L357 425V375Z"/>
+      <path d="M353 400Q400 346 447 400Q400 454 353 400Z"/>
+      <circle cx="400" cy="400" r="14"/>
+      <circle cx="400" cy="400" r="5"/>
+    </g>
+  </defs>
+  <use href="#geometry" stroke="url(#neon)" stroke-width="7" opacity=".13"/>
+  <use href="#geometry" stroke="url(#neon)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

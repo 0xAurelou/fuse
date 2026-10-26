@@ -10,18 +10,18 @@ test('hydration and refresh never replay old entries or losses', () => {
   assert.equal(observeAvatarStages(cursor, [stage('older-history', 2, 'exploded'), ...history], 30), null);
 });
 
-test('accepted receipts trigger once, including concurrent responses received out of order', () => {
+test('accepted receipts stay silent, including concurrent responses received out of order', () => {
   const cursor = createAvatarCursor(); observeAvatarStages(cursor, [], 0);
   for (const [id, seq] of [['BTC', 3], ['HYPE', 1], ['ETH', 2]] as const) {
-    assert.equal(observeAvatarStages(cursor, [stage(id, seq)], 10, true)?.kind, 'entry');
+    assert.equal(observeAvatarStages(cursor, [stage(id, seq)], 10, true), null);
     assert.equal(observeAvatarStages(cursor, [stage(id, seq)], 20, true), null);
   }
   assert.equal(observeAvatarStages(cursor, [stage('BTC', 3), stage('HYPE', 1), stage('ETH', 2)], 30), null);
 });
 
-test('polling detects fresh entry and exactly one confirmed loss, without reacting to pending', () => {
+test('accepted receipts are silent; polling detects exactly one confirmed loss, without reacting to pending', () => {
   const cursor = createAvatarCursor(); observeAvatarStages(cursor, [], 0);
-  assert.equal(observeAvatarStages(cursor, [stage('a', 1)], 10)?.kind, 'entry');
+  assert.equal(observeAvatarStages(cursor, [stage('a', 1)], 10), null);
   assert.equal(observeAvatarStages(cursor, [stage('a', 1, 'pending')], 20), null);
   assert.deepEqual(observeAvatarStages(cursor, [stage('a', 1, 'exploded')], 30), { id: 'a:loss', kind: 'loss', at: 30 });
   assert.equal(observeAvatarStages(cursor, [stage('a', 1, 'exploded')], 40), null);
@@ -31,7 +31,7 @@ test('polling detects fresh entry and exactly one confirmed loss, without reacti
 
 test('first snapshot can resolve a known receipt without replaying unrelated history', () => {
   const cursor = createAvatarCursor();
-  assert.equal(observeAvatarStages(cursor, [stage('new', 5)], 1, true)?.kind, 'entry');
+  assert.equal(observeAvatarStages(cursor, [stage('new', 5)], 1, true), null);
   assert.equal(observeAvatarStages(cursor, [stage('old', 2, 'exploded'), stage('new', 5, 'exploded')], 2)?.id, 'new:loss');
 });
 
@@ -50,7 +50,7 @@ test('hydrated winning history is silent and a fresh win beats an entry in the s
   assert.equal(observeAvatarStages(cursor, [stage('next', 3), stage('open', 2, 'survived')], 1)?.kind, 'win');
 });
 
-test('a loss takes priority over a simultaneous entry and a new account starts a silent baseline', () => {
+test('a loss takes priority over a simultaneous fresh stage and a new account starts a silent baseline', () => {
   const cursor = createAvatarCursor(); observeAvatarStages(cursor, [stage('a', 1)], 0);
   assert.equal(observeAvatarStages(cursor, [stage('a', 1, 'exploded'), stage('b', 2)], 1)?.kind, 'loss');
   assert.equal(observeAvatarStages(createAvatarCursor(), [stage('b', 2), stage('a', 1, 'exploded')], 2), null);

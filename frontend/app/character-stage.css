@@ -11,4 +11,4 @@
 @media(max-width:1000px){.vtuber-companion{width:280px;height:290px;right:10px;bottom:10px}.vtuber-restore{right:10px;bottom:10px}}
 @media(max-width:650px){.vtuber-companion{width:235px;max-width:calc(100vw - 12px);height:245px;right:max(6px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom))}.vtuber-label{font-size:7px;letter-spacing:.5px;margin-right:0}.vtuber-toolbar{padding-left:7px}.vtuber-toolbar button{min-width:26px;min-height:28px}.vtuber-actions button{min-height:26px}.vtuber-canvas{bottom:18px}}
 
-.vtuber-companion[data-reaction=win] .vtuber-label>i,.vtuber-companion[data-reaction=entry] .vtuber-label>i{background:#c8ef89}.vtuber-companion[data-reaction=loss] .vtuber-label>i{background:#e8a4c4}.vtuber-companion[data-reaction=paused] .vtuber-label>i{background:#80748f}.vtuber-toolbar button:disabled{opacity:.4;cursor:default}
+.vtuber-companion[data-reaction=win] .vtuber-label>i{background:#c8ef89}.vtuber-companion[data-reaction=loss] .vtuber-label>i{background:#e8a4c4}.vtuber-companion[data-reaction=paused] .vtuber-label>i{background:#80748f}.vtuber-toolbar button:disabled{opacity:.4;cursor:default}

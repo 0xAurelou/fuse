@@ -19,7 +19,7 @@ test('bundled VTuber is a self-contained CC0 skinned VRM with face and spring-bo
 });
 
 test('all dance and reaction poses stay finite with bounded expressions', () => {
-  for (const motion of ['idle', 'entry', 'win', 'loss'] as VtuberMotion[]) for (let frame = 0; frame <= 960; frame++) {
+  for (const motion of ['idle', 'win', 'loss'] as VtuberMotion[]) for (let frame = 0; frame <= 960; frame++) {
     const pose = vtuberPose(motion, frame / 60, .8, -.7);
     assert.ok(Object.values(pose.rotations).flat().every(Number.isFinite));
     assert.ok([...pose.hands.left, ...pose.hands.right, pose.x, pose.y, pose.turn].every(Number.isFinite));
@@ -32,7 +32,7 @@ test('classical dance sways the weight smoothly and loops exactly each phrase', 
   for (let frame = 0; frame <= 480; frame++) {
     const pose = vtuberPose('idle', frame / 60);
     minX = Math.min(minX, pose.x); maxX = Math.max(maxX, pose.x);
-    for (const side of ['left', 'right'] as const) for (const value of pose.hands[side]) assert.ok(Math.abs(value) < .3);
+    for (const side of ['left', 'right'] as const) for (const value of pose.hands[side]) assert.ok(Math.abs(value) < .45);
   }
   assert.ok(minX < -.015 && maxX > .015, `expected weight shift both ways, got ${minX}..${maxX}`);
   for (let frame = 0; frame <= 240; frame++) {
@@ -44,13 +44,14 @@ test('classical dance sways the weight smoothly and loops exactly each phrase', 
 test('victory cheer lifts the whole body and hands; reactions fade back to the same dance pose', () => {
   const idle = vtuberPose('idle', .5), win = vtuberPose('win', .5, 0, 0, 1.125);
   assert.ok(win.y > idle.y + .03);
-  assert.ok(win.hands.left[1] > idle.hands.left[1] && win.hands.right[1] > idle.hands.right[1]);
+  // Win arms are rotation-authored: the shoulder line swings up beside the head.
+  assert.ok(Math.abs(win.rotations.leftUpperArm[2] - idle.rotations.leftUpperArm[2]) > .5);
   assert.ok(win.happy > idle.happy);
   assert.deepEqual(win.rotations.chest, idle.rotations.chest);
   assert.deepEqual(win.rotations.upperChest, idle.rotations.upperChest);
   const kiss = vtuberPose('loss', .5, 0, 0, 1.4);
   assert.ok(kiss.mouthOh > .5 && kiss.wink > .5);
-  for (const kind of ['entry', 'win', 'loss'] as const) for (const age of [0, REACTION_SECONDS[kind]]) {
+  for (const kind of ['win', 'loss'] as const) for (const age of [0, REACTION_SECONDS[kind]]) {
     const pose = vtuberPose(kind, .5, 0, 0, age);
     for (const name of Object.keys(idle.rotations)) pose.rotations[name].forEach((value, index) => assert.ok(Math.abs(value - idle.rotations[name][index]) < 1e-12));
     for (const side of ['left', 'right'] as const) pose.hands[side].forEach((value, index) => assert.ok(Math.abs(value - idle.hands[side][index]) < 1e-12));

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './terminal.css';
 import './after-hours.css';
+import './club-music.css';
+import './rave-lights.css';
 import './character-stage.css';
 export const metadata: Metadata = {
   title: 'FUSE 100 — Single-stage Trading',

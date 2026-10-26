@@ -1,0 +1,138 @@
+/* Decorative light layers stay behind every chart, label and control. */
+.degen-shell .workspace{background:#070914}
+.degen-shell .degen-desk{position:relative;isolation:isolate}
+.degen-desk::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse at 0 35%,#b52cff18,transparent 52%),radial-gradient(ellipse at 100% 70%,#32ffd519,transparent 50%);
+  animation:rave-room 12s ease-in-out infinite alternate;
+}
+.degen-shell .market-chart-column{
+  background:radial-gradient(ellipse at 50% 65%,#131338 0%,#080c1b 60%,#060912 100%);
+}
+.degen-shell .market-chart-column::before{
+  content:'';position:absolute;inset:50% auto auto 50%;width:115%;height:auto;aspect-ratio:1;z-index:-1;
+  background:url('/art/rave-sigil.svg') center/contain no-repeat;opacity:.28;
+  transform:translate(-50%,-50%) rotate(0deg);transform-origin:center;pointer-events:none;
+  animation:rave-sigil-turn 64s linear infinite;
+}
+.degen-shell [data-asset=HYPE] .market-chart-column::before{animation-direction:reverse;animation-delay:-21s}
+.degen-shell [data-asset=ETH] .market-chart-column::before{animation-delay:-42s}
+.degen-shell .market-chart-column::after{
+  content:'';position:absolute;inset:-40%;z-index:-1;pointer-events:none;opacity:.58;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 115%,transparent 0deg 12deg,#b7ff4533 12.2deg 12.5deg,transparent 12.8deg 24deg),
+    repeating-conic-gradient(from 14deg at 50% -15%,transparent 0deg 17deg,#9b53ff55 17.2deg 17.5deg,transparent 17.8deg 30deg),
+    radial-gradient(ellipse at 50% 90%,#9dff4c20,transparent 50%);
+  transform-origin:50% 100%;animation:rave-laser-sweep 9s ease-in-out infinite alternate;
+}
+.degen-shell [data-asset=HYPE] .market-chart-column::after{animation-delay:-3s;animation-direction:alternate-reverse}
+.degen-shell [data-asset=ETH] .market-chart-column::after{animation-delay:-6s}
+.degen-shell .market-chart{
+  background:linear-gradient(#070b1840,#070b1870),radial-gradient(ellipse at 50% 100%,#a54cff12,transparent 80%);
+}
+.degen-shell .market-price-row{background:#080d1dcc}
+.degen-shell .market-levels,.degen-shell .chart-bottom-line{background:#090e20eb}
+.degen-shell .market-header{background:#0d1227}
+.degen-shell .market-terminal{border-color:#64518b;box-shadow:0 0 20px #a24cff12,0 3px 18px #0005}
+.degen-shell .has-position{border-color:var(--market-accent);box-shadow:0 0 18px color-mix(in srgb,var(--market-accent) 20%,transparent)}
+
+/* The soundtrack's open space becomes a small projection wall. */
+.degen-shell .club-music{position:relative;isolation:isolate;overflow:hidden;border-color:#594075;background:#0b0e20}
+.club-music::before{
+  content:'';position:absolute;width:360px;height:360px;right:8%;top:calc(50% - 180px);z-index:-1;
+  background:url('/art/rave-sigil.svg') center/contain no-repeat;opacity:.55;pointer-events:none;
+  animation:rave-projection-turn 80s linear infinite reverse;
+}
+.club-music::after{
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,#0b0e20 0%,#0b0e20ed 27%,transparent 70%),repeating-conic-gradient(from 25deg at 90% 140%,transparent 0deg 14deg,#b2ff4033 14.3deg 14.6deg,transparent 15deg 28deg),radial-gradient(ellipse at 80% 100%,#a43aff30,transparent 65%);
+  animation:rave-light-breathe 3s ease-in-out infinite alternate;
+}
+.club-music-info{max-width:260px;text-shadow:0 1px 5px #070914}
+
+/* Two visible laser projectors: bright cores, colored bloom and crossing fans. */
+.rave-lasers{--show-phase:0s;position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;animation:rave-color-cycle 14.4s steps(1,end) infinite;animation-delay:var(--show-phase)}
+.rave-lasers::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 10% 100%,#b8ff3540,transparent 65%),radial-gradient(ellipse at 90% 100%,#3de9ff40,transparent 65%);opacity:0;animation:rave-drop-wash 4.8s linear infinite;animation-delay:var(--show-phase)}
+.rave-laser-emitter{position:absolute;bottom:3%;width:0;height:0;transform-origin:0 0;animation:rave-fan-scan 4.8s linear infinite;animation-delay:var(--show-phase)}
+.rave-laser-left{left:3%}
+.rave-laser-right{right:3%;animation-direction:reverse;animation-delay:calc(var(--show-phase) - .6s)}
+.rave-laser-emitter::after{content:'';position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:#f3ffe9;box-shadow:0 0 8px 3px #dcff8b,0 0 28px 8px #b5ff47aa,0 0 70px 20px #9eff4433}
+.rave-laser-right::after{box-shadow:0 0 8px 3px #afffff,0 0 28px 8px #30eaffaa,0 0 70px 20px #30eaff33}
+.rave-laser-emitter i{--laser:#b8ff35;--angle:12deg;display:block;position:absolute;bottom:0;left:-1px;width:2px;height:1000px;transform-origin:50% 100%;transform:rotate(var(--angle));background:linear-gradient(0deg,#fff 0%,var(--laser) 12%,var(--laser) 75%,transparent 100%);box-shadow:0 0 6px var(--laser);opacity:.85;animation:rave-beam-flash 1.2s linear infinite,rave-ray-spread 4.8s ease-in-out infinite;animation-delay:var(--show-phase),var(--show-phase)}
+.rave-laser-emitter i::before{content:'';position:absolute;inset:0 -5px;background:linear-gradient(0deg,var(--laser),transparent);filter:blur(5px);opacity:.5}
+.rave-laser-emitter i:nth-child(2){--angle:27deg;--laser:#42ffda}
+.rave-laser-emitter i:nth-child(3){--angle:42deg;--laser:#b8ff35}
+.rave-laser-emitter i:nth-child(4){--angle:57deg;--laser:#c66bff}
+.rave-laser-emitter i:nth-child(5){--angle:72deg;--laser:#ff47d2}
+.rave-laser-right i{--angle:-12deg;--laser:#3de9ff}
+.rave-laser-right i:nth-child(2){--angle:-27deg;--laser:#ff47d2}
+.rave-laser-right i:nth-child(3){--angle:-42deg;--laser:#3de9ff}
+.rave-laser-right i:nth-child(4){--angle:-57deg;--laser:#a4ff35}
+.rave-laser-right i:nth-child(5){--angle:-72deg;--laser:#c66bff}
+.rave-laser-right i{animation-delay:calc(var(--show-phase) - .6s),calc(var(--show-phase) - .6s)}
+.degen-shell [data-asset=HYPE] .rave-lasers{--show-phase:-1.6s}
+.degen-shell [data-asset=ETH] .rave-lasers{--show-phase:-3.2s}
+.club-music .rave-lasers{left:32%}
+.club-music .rave-laser-emitter{bottom:-2%}
+.party-off .rave-lasers,
+.party-off .rave-lasers::after,
+.party-off .rave-laser-emitter,
+.party-off .rave-laser-emitter i{animation-play-state:paused}
+@keyframes rave-fan-scan{
+  0%,100%{transform:rotate(-24deg)}
+  24%{transform:rotate(22deg)}
+  26%{transform:rotate(-8deg)}
+  48%{transform:rotate(28deg)}
+  51%{transform:rotate(38deg)}
+  74%{transform:rotate(-20deg)}
+  77%{transform:rotate(8deg)}
+}
+@keyframes rave-ray-spread{
+  0%,100%{transform:rotate(calc(var(--angle) / 3))}
+  22%,72%{transform:rotate(var(--angle))}
+  48%{transform:rotate(calc(var(--angle) / 2))}
+}
+@keyframes rave-beam-flash{
+  0%,100%{opacity:.12}
+  8%,36%{opacity:1}
+  23%{opacity:.42}
+  55%,85%{opacity:.16}
+}
+@keyframes rave-color-cycle{
+  0%,100%{filter:hue-rotate(0deg)}
+  16.67%{filter:hue-rotate(75deg)}
+  33.33%{filter:hue-rotate(160deg)}
+  50%{filter:hue-rotate(240deg)}
+  66.67%{filter:hue-rotate(300deg)}
+  83.33%{filter:hue-rotate(120deg)}
+}
+@keyframes rave-drop-wash{
+  0%,45%,100%{opacity:0}
+  5%,54%{opacity:.7}
+  16%,68%{opacity:0}
+}
+.degen-shell .party-off::before,
+.degen-shell .party-off .market-chart-column::before,
+.degen-shell .party-off .market-chart-column::after,
+.party-off .club-music::before,
+.party-off .club-music::after{animation-play-state:paused}
+
+@keyframes rave-sigil-turn{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes rave-projection-turn{to{transform:rotate(360deg)}}
+@keyframes rave-laser-sweep{from{transform:rotate(-9deg);opacity:.35}to{transform:rotate(9deg);opacity:.7}}
+@keyframes rave-light-breathe{from{opacity:.5}to{opacity:1}}
+@keyframes rave-room{from{opacity:.45;transform:translateY(-2%)}to{opacity:1;transform:translateY(2%)}}
+
+@media(max-width:650px){
+  .club-music::before{right:-100px;opacity:.3}
+  .club-music::after{background:linear-gradient(90deg,#0b0e2090,#0b0e20c9),radial-gradient(ellipse at 100% 50%,#a43aff38,transparent 80%)}
+  .degen-shell .market-chart-column::before{width:140%;opacity:.22}
+}
+@media(prefers-reduced-motion:reduce){
+  .degen-desk::before,
+  .degen-shell .market-chart-column::before,
+  .degen-shell .market-chart-column::after,
+  .club-music::before,
+  .club-music::after{animation:none}
+  .rave-lasers,.rave-lasers::after,.rave-laser-emitter,.rave-laser-emitter i{animation:none}
+}

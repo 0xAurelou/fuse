@@ -2,7 +2,9 @@
 
 The former six-tile Floor trombinoscope has been removed. Its original adult character images are retained, with [asset paths and generation prompts](club-cast-prompts.md), as artwork only. They are not rigged Spine or Live2D models. The [new character rigging brief](../../../docs/CHARACTER_ANIMATION_BRIEF.md) records the assets and runtime prerequisites for a genuine skeletal animation replacement.
 
-The current Degen theme uses **nightclub.png** (1942 × 809) and **dj-cat.png** (1254 × 1254, transparent). Both were generated using the built-in Image Gen tool and copied into this directory. The initial quieter `after-hours.png` is retained as the previous visual direction. A CSS transform rotates the DJ cat and gently moves the club scene; chart lines and labels are not transformed. Motion can be paused in the UI and respects reduced-motion preferences.
+The current Degen backdrop uses **rave-sigil.svg**, an original geometric tribal-style light pattern, with CSS laser fans and ambient neon gradients in `app/rave-lights.css`. Patterns rotate in opposite directions across the three charts, and the music panel carries a matching projection. The DJ toggle pauses every light layer; reduced-motion preferences disable the animations. Chart lines, prices and controls remain separate from the decorative layers. These effects use CSS timing and are not synchronized to the YouTube audio.
+
+**nightclub.png** (1942 × 809) and the quieter **after-hours.png** are retained as previous background directions. The current **dj-cat.png** mascot (1254 × 1254, transparent) and both former backgrounds were generated using the built-in Image Gen tool. Their prompts are preserved below.
 
 Nightclub final prompt:
 

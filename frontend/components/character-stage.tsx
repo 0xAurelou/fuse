@@ -30,8 +30,8 @@ const CharacterCanvas = memo(function CharacterCanvas({ options }: { options: Ch
   </div>;
 });
 
-export const CharacterStage = memo(function CharacterStage({ playing, reaction }: { playing: boolean; reaction: AvatarReaction | null }) {
-  const [paused, setPaused] = useState(false), [hidden, setHidden] = useState(false), [credits, setCredits] = useState(false), [neutral, setNeutral] = useState(false);
+export const CharacterStage = memo(function CharacterStage({ reaction }: { reaction: AvatarReaction | null }) {
+  const [paused, setPaused] = useState(false), [hidden, setHidden] = useState(false), [credits, setCredits] = useState(false);
   const [activeReaction, setActiveReaction] = useState<AvatarReaction['kind'] | null>(null);
   useEffect(() => {
     const remaining = reaction ? reaction.at + REACTION_SECONDS[reaction.kind] * 1000 - Date.now() : 0;
@@ -40,15 +40,14 @@ export const CharacterStage = memo(function CharacterStage({ playing, reaction }
     const timer = setTimeout(() => setActiveReaction(null), remaining);
     return () => clearTimeout(timer);
   }, [reaction]);
-  const stopped = !playing || paused;
-  const caption = stopped ? 'PAUSED' : neutral ? 'NEUTRAL POSE' : activeReaction === 'entry' ? 'POSITION OPEN' : activeReaction === 'win' ? 'STAGE WON' : activeReaction === 'loss' ? 'KISS IT GOODBYE' : 'CLASSIC DANCE';
+  const stopped = paused;
+  const caption = stopped ? 'PAUSED' : activeReaction === 'win' ? 'STAGE WON' : activeReaction === 'loss' ? 'KISS IT GOODBYE' : 'CLASSIC DANCE';
   if (hidden) return <button className="vtuber-restore" onClick={() => setHidden(false)} aria-label="Show VTuber avatar"><Icon name="users" size={14}/><span>VTUBER</span></button>;
   return <aside className="vtuber-companion" aria-label="3D VTuber companion" data-reaction={stopped ? 'paused' : activeReaction || 'idle'}>
-    <CharacterCanvas options={{ playing: !stopped, reaction, neutral }}/>
+    <CharacterCanvas options={{ playing: !stopped, reaction }}/>
     <div className="vtuber-toolbar">
       <span className="vtuber-label" aria-live="polite"><i/>{caption}</span>
-      <button disabled={!playing} aria-label={!playing ? 'Avatar paused with DJ' : paused ? 'Resume avatar motion' : 'Pause avatar motion'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{stopped ? '▶' : 'Ⅱ'}</button>
-      <button aria-label={neutral ? 'Resume the dance' : 'Hold a neutral pose'} aria-pressed={neutral} onClick={() => setNeutral(value => !value)}>{neutral ? '♪' : 'T'}</button>
+      <button aria-label={paused ? 'Resume the dance' : 'Pause the dance'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{stopped ? '▶' : 'Ⅱ'}</button>
       <button aria-label="Avatar credits" aria-expanded={credits} onClick={() => setCredits(value => !value)}><Icon name="info" size={12}/></button>
       <button aria-label="Minimize VTuber avatar" onClick={() => setHidden(true)}>−</button>
     </div>

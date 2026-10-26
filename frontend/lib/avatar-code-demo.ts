@@ -42,6 +42,12 @@ export type CloneProfile = {
   flattenBody: boolean;
   // Persistent extra mouth-`oh` morph so the clone's resting face differs.
   faceOh: number;
+  // Armpit weight surgery: for every torso-dominant vertex carrying arm-bone
+  // weight, fold that weight into the dominant torso bone. Residual arm weight
+  // on torso skin is what drags pink "ghost arm" slabs behind the back when
+  // the real arms rotate down. Arm-dominant vertices (the arms' own skin and
+  // the armpit crease) are untouched.
+  foldTorsoArmWeight: boolean;
 };
 
 // Victoria Rubin (1.72m): ships J_Sec bust bones, long hair, and a body
@@ -58,6 +64,7 @@ export const VICTORIA_PROFILE: CloneProfile = {
   garmentColor: '#8f1030',
   flattenBody: false,
   faceOh: .12,
+  foldTorsoArmWeight: true,
 };
 
 // Sakurada Fumiriya (1.89m): anime-styled face, no bust bones — everything is
@@ -74,6 +81,7 @@ export const FUMIRIYA_PROFILE: CloneProfile = {
   garmentColor: '#8f1030',
   flattenBody: true,
   faceOh: .12,
+  foldTorsoArmWeight: false,
 };
 
 type Three = typeof import('three');
@@ -82,13 +90,13 @@ type VrmLike = {
   springBoneManager?: { joints: Set<{ bone: import('three').Object3D }>; deleteJoint(joint: { bone: import('three').Object3D }): void };
 };
 
-export type BustDrive = { id: string | null; excitement: number; pulse?: number };
+export type BustDrive = { id: string | null; excitement: number; pulse?: number; grab?: { side: number; y: number; x: number } | null };
 export type CodeCustomDemo = { update(dt: number, drive: BustDrive): void };
 
 type Sides = Array<{
   bone: import('three').Object3D;
-  pitch: BustSpringState; lift: BustSpringState;
-  pitchParams: BustSpringParams; liftParams: BustSpringParams; kick: number;
+  pitch: BustSpringState; lift: BustSpringState; side: BustSpringState;
+  pitchParams: BustSpringParams; liftParams: BustSpringParams; sideParams: BustSpringParams; kick: number;
   restQuat?: import('three').Quaternion; restPos?: import('three').Vector3;
   parentRestQuat?: import('three').Quaternion; parentRestPos?: import('three').Vector3;
 }>;
@@ -121,12 +129,13 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
     buildGarmentShell(THREE, body, profile.bandeau, profile.garmentColor);
     buildGarmentShell(THREE, body, profile.shorts, '#101826');
   }
+  if (profile.foldTorsoArmWeight) fixArmpits(THREE, avatar);
   addStraps(THREE, avatar, '#101826', profile.straps);
   addChoker(THREE, avatar, '#101826');
 
   const sides: Sides = [
-    { bone: boneL, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 82, damping: 5.6 }, liftParams: { stiffness: 150, damping: 10 }, kick: 2.6 },
-    { bone: boneR, pitch: createBustSpringState(), lift: createBustSpringState(), pitchParams: { stiffness: 98, damping: 6.8 }, liftParams: { stiffness: 150, damping: 10 }, kick: 2.2 },
+    { bone: boneL, pitch: createBustSpringState(), lift: createBustSpringState(), side: createBustSpringState(), pitchParams: { stiffness: 82, damping: 5.6 }, liftParams: { stiffness: 150, damping: 10 }, sideParams: { stiffness: 130, damping: 9 }, kick: 2.6 },
+    { bone: boneR, pitch: createBustSpringState(), lift: createBustSpringState(), side: createBustSpringState(), pitchParams: { stiffness: 98, damping: 6.8 }, liftParams: { stiffness: 150, damping: 10 }, sideParams: { stiffness: 130, damping: 9 }, kick: 2.2 },
   ];
   for (const side of sides) {
     side.restQuat = side.bone.quaternion.clone();
@@ -156,22 +165,26 @@ export function buildCodeCustomDemo(THREE: Three, avatar: VrmLike, profile: Clon
         }
       }
       lastPulse = pulse;
-      for (const side of sides) {
+      for (const [index, side] of sides.entries()) {
         side.bone.parent!.getWorldQuaternion(quat);
         quat.multiply(side.parentRestQuat!.clone().invert());
         forward.set(0, 0, 1).applyQuaternion(quat);
-        const supportPitch = Math.atan2(forward.y, Math.hypot(forward.x, forward.z));
+        const grab = drive.grab && drive.grab.side === index ? drive.grab : null;
+        const supportPitch = Math.atan2(forward.y, Math.hypot(forward.x, forward.z)) + (grab ? grab.x * .9 : 0);
         const parentPos = side.bone.parent!.getWorldPosition(new THREE.Vector3());
-        const supportLift = parentPos.y - side.parentRestPos!.y;
+        const supportLift = parentPos.y - side.parentRestPos!.y + (grab ? grab.y : 0);
+        const supportSide = parentPos.x - side.parentRestPos!.x + (grab ? grab.x : 0);
         stepBustSpring(side.pitch, supportPitch, dt, side.pitchParams);
         stepBustSpring(side.lift, supportLift, dt, side.liftParams);
+        stepBustSpring(side.side, supportSide, dt, side.sideParams);
         // Apply the lag error, not the absolute support: the parent transform
         // already carries the motion; the error is what the breast trails
         // with. Gain well above 1 makes the trail read at screen size.
         const pitchErr = (supportPitch - side.pitch.angle) * 2.4;
         const liftErr = supportLift - side.lift.angle;
+        const sideErr = supportSide - side.side.angle;
         side.bone.quaternion.copy(side.restQuat!).multiply(spin.setFromAxisAngle(axis, -pitchErr));
-        side.bone.position.set(side.restPos!.x, side.restPos!.y - liftErr * .9, side.restPos!.z);
+        side.bone.position.set(side.restPos!.x - sideErr * .9, side.restPos!.y - liftErr * .9, side.restPos!.z);
         // three-vrm bones run with matrixAutoUpdate=false (the normalized
         // humanoid drives them through .matrix); recompose the local matrix
         // or the skin never sees the spring motion.
@@ -242,6 +255,58 @@ function reskinBust(THREE: Three, avatar: VrmLike, skeleton: import('three').Ske
       else pairs.push({ bone: target, weight: transfer });
       pairs.sort((a, b) => b.weight - a.weight);
       const top = pairs.slice(0, 4);
+      const topSum = top.reduce((total, pair) => total + pair.weight, 0) || 1;
+      for (let c = 0; c < 4; c++) {
+        const pair = top[c];
+        skinIndex.setComponent(vertex, c, pair ? pair.bone : 0);
+        skinWeight.setComponent(vertex, c, pair ? pair.weight / topSum * sum : 0);
+      }
+    }
+    skinIndex.needsUpdate = true;
+    skinWeight.needsUpdate = true;
+  });
+}
+
+// Torso arm-weight surgery: the base mesh leaves residual weight on the arm
+// bones across the side-back torso (armpit down to the waist). When the arms
+// rotate down, those torso vertices sag into pink "ghost arm" slabs behind
+// the body. For every torso-dominant vertex, fold its arm-bone weight into
+// the dominant torso bone. Arm-dominant vertices (the arms' own skin and the
+// armpit crease) are untouched.
+function fixArmpits(THREE: Three, avatar: VrmLike) {
+  const armNames = ['J_Bip_L_UpperArm', 'J_Bip_L_LowerArm', 'J_Bip_R_UpperArm', 'J_Bip_R_LowerArm'];
+  const torsoNames = ['J_Bip_C_UpperChest', 'J_Bip_C_Chest', 'J_Bip_C_Spine'];
+  avatar.scene.traverse(object => {
+    const mesh = object as import('three').SkinnedMesh;
+    if (!mesh.isSkinnedMesh) return;
+    const skeleton = mesh.skeleton;
+    const armIndices = new Set(armNames.map(name => skeleton.bones.findIndex(b => b.name === name)).filter(i => i >= 0));
+    const torsoIndices = new Set(torsoNames.map(name => skeleton.bones.findIndex(b => b.name === name)).filter(i => i >= 0));
+    if (!armIndices.size || !torsoIndices.size) return;
+    const skinIndex = mesh.geometry.getAttribute('skinIndex');
+    const skinWeight = mesh.geometry.getAttribute('skinWeight');
+    if (!skinIndex || !skinWeight) return;
+    for (let vertex = 0; vertex < skinIndex.count; vertex++) {
+      const pairs: Array<{ bone: number; weight: number }> = [];
+      let sum = 0, dominant: { bone: number; weight: number } | null = null;
+      for (let c = 0; c < 4; c++) {
+        const weight = skinWeight.getComponent(vertex, c);
+        if (weight <= 1e-4) continue;
+        const pair = { bone: skinIndex.getComponent(vertex, c), weight };
+        pairs.push(pair);
+        sum += weight;
+        if (!dominant || weight > dominant.weight) dominant = pair;
+      }
+      if (!dominant || !torsoIndices.has(dominant.bone)) continue;
+      const foldTo = dominant.bone;
+      const foldedTotal = pairs.reduce((total, pair) => total + (armIndices.has(pair.bone) ? pair.weight : 0), 0);
+      if (foldedTotal <= 1e-4) continue;
+      const kept = pairs.filter(pair => !armIndices.has(pair.bone));
+      const target = kept.find(pair => pair.bone === foldTo);
+      if (target) target.weight += foldedTotal;
+      else kept.push({ bone: foldTo, weight: foldedTotal });
+      kept.sort((a, b) => b.weight - a.weight);
+      const top = kept.slice(0, 4);
       const topSum = top.reduce((total, pair) => total + pair.weight, 0) || 1;
       for (let c = 0; c < 4; c++) {
         const pair = top[c];

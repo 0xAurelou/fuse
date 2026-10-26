@@ -5,7 +5,7 @@ import { vtuberPose } from '../lib/vtuber-motion.ts';
 const distance = (a: Point3, b: Point3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
 test('dance arm IK preserves both segment lengths and meets reachable targets', () => {
-  for (const motion of ['idle', 'entry', 'win', 'loss'] as const) for (let frame = 0; frame <= 480; frame++) {
+  for (const motion of ['idle', 'win', 'loss'] as const) for (let frame = 0; frame <= 480; frame++) {
     const pose = vtuberPose(motion, frame / 60);
     for (const [side, sign] of [['left', -1], ['right', 1]] as const) {
       const shoulder: Point3 = [sign * .20, 1.30, 0];

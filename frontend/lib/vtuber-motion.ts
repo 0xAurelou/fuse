@@ -3,9 +3,9 @@
 // poses, no pointing; everything is sinusoidal so any phase reads natural.
 // Reactions (entry / win / loss) ride on top and vanish exactly at their
 // envelope edges.
-export type VtuberMotion = 'idle' | 'entry' | 'win' | 'loss';
+export type VtuberMotion = 'idle' | 'win' | 'loss';
 export type Rotation = [number, number, number];
-export const REACTION_SECONDS = { entry: 5.2, win: 4.8, loss: 3.6 };
+export const REACTION_SECONDS = { win: 4.8, loss: 3.6 };
 export const DANCE_BPM = 128;
 export const DANCE_SECONDS = 8 * 60 / DANCE_BPM;
 const BEAT = Math.PI * 2 * DANCE_BPM / 60;
@@ -32,17 +32,16 @@ export function dancePhase(time: number) {
 }
 export function vtuberPose(motion: VtuberMotion, time: number, lookX = 0, lookY = 0, reactionTime = time) {
   const t = Math.max(0, time), { sway, bob, pulse, flow } = dancePhase(t);
-  const entry = motion === 'entry' ? envelope(reactionTime, REACTION_SECONDS.entry) : 0;
   const win = motion === 'win' ? envelope(reactionTime, REACTION_SECONDS.win) : 0;
   const loss = motion === 'loss' ? envelope(reactionTime, REACTION_SECONDS.loss) : 0;
-  const energy = 1 + entry * .3, pump = Math.sin(reactionTime * Math.PI * 4);
+  const pump = Math.sin(reactionTime * Math.PI * 4);
   const kissTime = Math.max(0, Math.min(1, reactionTime / REACTION_SECONDS.loss));
   const toMouth = ease(kissTime / .3) * (1 - ease((kissTime - .55) / .3));
   const blow = ease((kissTime - .5) / .35);
   const lag = Math.sin(t * BEAT * .5 - .35);
   const rotations: Record<string, Rotation> = {
-    hips: [pulse * .03 * energy + flow * .008, sway * .075 * energy, sway * .07 * energy],
-    spine: [pulse * .02, -sway * .065 * energy, -lag * .05 * energy],
+    hips: [pulse * .03 + flow * .008, sway * .075, sway * .07],
+    spine: [pulse * .02, -sway * .065, -lag * .05],
     chest: [pulse * .04 + flow * .01, 0, sway * .014],
     upperChest: [pulse * .03, 0, sway * .01],
     neck: [0, lookX * .04, sway * .02 + loss * .07 * toMouth],
@@ -66,30 +65,40 @@ export function vtuberPose(motion: VtuberMotion, time: number, lookX = 0, lookY 
     rotations[`${side}ThumbProximal`] = [0, 0, 0];
     rotations[`${side}ThumbDistal`] = [0, 0, 0];
   }
-  // Flowing arm arcs: hands drift side to side over two beats, breathe up and
-  // down on the beat, and arc forward/back in unison — a classic smooth sway.
-  const drift = .05 * Math.sin(t * BEAT * .5 + .6);
-  const lift = .045 * Math.sin(t * BEAT + 1.1);
-  const arc = .04 * Math.cos(t * BEAT * .5 + .6);
-  const handY = -.17 + lift + entry * (pulse * .02 + .05);
-  const left: Rotation = [-.13 - drift, handY, .12 + arc];
-  const right: Rotation = [.13 + drift, handY, .12 + arc];
-  // Win: both hands rise beside the head, pumping softly in opposition.
-  left[0] += (-.15 - left[0]) * win;
-  right[0] += (.15 - right[0]) * win;
-  left[1] += (.14 + pump * .02 - left[1]) * win;
-  right[1] += (.14 - pump * .02 - right[1]) * win;
+  // Arms hang beside the hips INSIDE the IK reach (shoulder→fingertip is
+  // ~.43m; lower targets just stretch the arm straight). Small sway on top.
+  const drift = .015 * Math.sin(t * BEAT * .5 + .6);
+  const lift = .02 * Math.sin(t * BEAT + 1.1);
+  const arc = .012 * Math.cos(t * BEAT * .5 + .6);
+  // Arms are rotation-authored (guaranteed connected to the torso chain,
+  // nothing can cross or tangle): dance bases baked from a solved natural
+  // pose, win cheer bases baked from a solved hands-up pose, blended by the
+  // reaction envelopes. IK is used only for the blown-kiss loss via `ikArms`.
+  const swing = Math.sin(t * BEAT * .5 + .6);
+  const swing2 = Math.sin(t * BEAT * .5 - .35);
+  const armSway = sway * .03, armSwing = swing * .05;
+  const blend = (a: number, b: number, k: number) => a + (b - a) * k;
+  rotations.leftUpperArm = [blend(-0.144 + armSwing * .6, -0.215, win), blend(0.255, 0.460, win), blend(0.886 + armSway, -0.430, win)];
+  rotations.rightUpperArm = [blend(-0.135 + armSwing * .6, -0.191, win), blend(-0.262, -0.482, win), blend(-0.813 - armSway, 0.517, win)];
+  rotations.leftLowerArm = [blend(-0.029 + swing2 * .04, 0.142, win) + pump * .04 * win, blend(-0.106, 0.252, win), blend(0.911 + armSway * .6, -1.076, win)];
+  rotations.rightLowerArm = [blend(-0.028 + swing2 * .04, 0.132, win) - pump * .04 * win, blend(0.114, -0.293, win), blend(-0.993 - armSway * .6, 1.071, win)];
+  const handY = -.12 + lift;
+  const left: Rotation = [-.125 - drift, handY, .055 + arc];
+  const right: Rotation = [.125 + drift, handY, .055 + arc];
   // Loss: right hand blows a kiss; left keeps dancing.
   right[0] += ((.02 * toMouth + .23 * blow) - right[0]) * loss;
   right[1] += ((.115 * toMouth + .075 * blow) - right[1]) * loss;
+  right[2] += ((.1 * toMouth + .15 * blow) - right[2]) * loss;
   return {
     rotations, hands: { left, right },
+    // IK takes over only the blown-kiss hand; everything else is rotation-authored.
+    ikArms: loss,
     point: 0, pointUp: win,
-    x: sway * .028 * energy,
+    x: sway * .028,
     // Weight drops on the beat (pulse²) and recovers after — grounded, not floating.
-    y: -pulse * pulse * .014 + flow * .002 + entry * pulse * .012 + win * Math.max(0, pump) * .032,
+    y: -pulse * pulse * .014 + flow * .002 + win * Math.max(0, pump) * .032,
     turn: sway * .05 + flow * .01,
-    happy: .25 + pulse * .05 + entry * .15 + win * .45 + loss * .15 * toMouth,
+    happy: .25 + pulse * .05 + win * .45 + loss * .15 * toMouth,
     sad: loss * .12, angry: 0, relaxed: 0,
     blink: Math.max(0, 1 - Math.abs((t % 4.8) - 4.55) / .12),
     wink: loss * .6 * toMouth,
