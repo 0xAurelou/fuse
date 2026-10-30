@@ -90,15 +90,16 @@ contract LPAccountingHandler is FUSEFixture {
     function request(uint96 rawShares, bool useBob) external {
         address owner = useBob ? bob : alice;
         uint256 balance = shares.balanceOf(owner);
-        if (balance == 0 || shares.activeRequest(owner) != 0) return;
+        uint256 minimum = shares.minRedeemShares();
+        if (balance < minimum || shares.activeRequest(owner) != 0) return;
         vm.prank(owner);
-        shares.requestRedeem(bound(rawShares, 1, balance), owner, owner);
+        shares.requestRedeem(bound(rawShares, minimum, balance), owner, owner);
     }
 
     function fulfill() external {
         uint256 id = shares.queueHead();
         if (id == shares.nextRequestId()) return;
-        (, uint64 readyAt,, uint256 pending,,,,) = shares.exitRequests(id);
+        (, uint64 readyAt,, uint256 pending,,,,,) = shares.exitRequests(id);
         if (block.timestamp < readyAt) vm.warp(readyAt);
         _window();
         uint256 assets = shares.convertToAssets(pending);
@@ -137,9 +138,24 @@ contract LPAccountingHandler is FUSEFixture {
         uint256 pending;
         uint256 owed;
         for (uint256 id = 1; id < shares.nextRequestId(); ++id) {
-            (,,, uint256 amount, uint256 assets,, uint256 paid, bool funded) = shares.exitRequests(id);
+            (
+                address requestController,,,
+                uint256 amount,
+                uint256 assets,
+                uint256 claimedShares,
+                uint256 paid,
+                bool funded,
+                address owner
+            ) = shares.exitRequests(id);
             if (funded) owed += assets - paid;
             else pending += amount;
+            if (claimedShares < amount) {
+                assertEq(shares.activeRequest(owner), id);
+                assertEq(shares.controllerRequest(requestController), id);
+            } else {
+                assertTrue(shares.activeRequest(owner) != id);
+                assertTrue(shares.controllerRequest(requestController) != id);
+            }
         }
         assertEq(pending, shares.balanceOf(address(shares)));
         assertEq(owed, lp.reservedExitUSDC());

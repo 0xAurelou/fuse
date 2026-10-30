@@ -45,6 +45,7 @@ type Policy struct {
 	Markets            map[string]Model `json:"markets,omitempty"`
 	Product            string           `json:"product,omitempty"`
 	Recovery           *RecoveryPolicy  `json:"recovery,omitempty"`
+	Capital            *CapitalLimits   `json:"capital,omitempty"`
 	Version            string           `json:"version"`
 	Mode               string           `json:"mode"`
 	Schedule           string           `json:"schedule"`
@@ -67,6 +68,9 @@ type Policy struct {
 type Model struct {
 	DNT                 *DNTModel       `json:"dnt,omitempty"`
 	MultiplierWidthsPPM map[int64]int64 `json:"multiplier_widths_ppm,omitempty"`
+	// Explicit PPB tables support a validated subset of current presets. The
+	// omitted field preserves historical policy and journal encodings.
+	MultiplierWidthsPPB map[int64]int64 `json:"multiplier_widths_ppb,omitempty"`
 	Version             string          `json:"version"`
 	Dataset             string          `json:"dataset"`
 	TrainingWindow      string          `json:"training_window"`
@@ -81,15 +85,32 @@ type Model struct {
 }
 
 func (p Policy) Validate() error {
-	if p.Multipliers != nil && (p.Product != SingleStage || !slices.Equal(p.Multipliers, PayoutOptions())) {
+	ppb := len(p.Model.MultiplierWidthsPPB) > 0
+	if ppb && (p.Product != SingleStage || len(p.Multipliers) == 0) {
+		return errors.New("PPB pricing requires an explicit single-stage preset menu")
+	}
+	if ppb {
+		previous := int64(0)
+		for _, multiplier := range p.Multipliers {
+			if multiplier <= previous || !slices.Contains(PayoutOptions(), multiplier) {
+				return errors.New("PPB pricing presets must be unique, increasing supported payouts")
+			}
+			previous = multiplier
+		}
+	}
+	if p.Multipliers != nil && (p.Product != SingleStage || (!ppb && !slices.Equal(p.Multipliers, PayoutOptions()))) {
 		return errors.New("single-stage multipliers must be 2, 5, 10, 25, 50, 100, 250, 1000 and 10000")
 	}
 	for asset, model := range p.Markets {
 		if p.Product != SingleStage || !SupportedAsset(asset) || asset == "BTC" {
 			return errors.New("unsupported additional market")
 		}
+		if ppb != (len(model.MultiplierWidthsPPB) > 0) {
+			return errors.New("PPB pricing requires the explicit table format in every enabled market")
+		}
 		copy := p
 		copy.Markets = nil
+		copy.Capital = nil // Validate the aggregate capital policy on the outer policy only.
 		copy.Model = model
 		if err := copy.Validate(); err != nil {
 			return fmt.Errorf("%s model: %w", asset, err)
@@ -115,6 +136,11 @@ func (p Policy) Validate() error {
 	if p.MinStake <= 0 || p.MaxStake < p.MinStake || p.MaxStake > Limit/100 || p.LPBuffer < 0 || p.LPBuffer > Limit || p.MaxExposure <= 0 || p.MaxExposure > Limit || p.MaxAccountExposure <= 0 || p.MaxAccountExposure > p.MaxExposure || p.MaxActive <= 0 || p.MaxActive > 10_000 {
 		return errors.New("invalid risk policy")
 	}
+	if p.Capital != nil {
+		if err := p.Capital.validate(p); err != nil {
+			return err
+		}
+	}
 	if p.Product == "" && (p.PayoutTable[0] != Scale || p.PayoutTable[8] != 100*Scale) {
 		return errors.New("payout table must start at 1x and end at 100x")
 	}
@@ -124,6 +150,9 @@ func (p Policy) Validate() error {
 		}
 	}
 	m := p.Model
+	if len(m.MultiplierWidthsPPB) > 0 && (m.DNT != nil || len(m.MultiplierWidthsPPM) > 0) {
+		return errors.New("select exactly one pricing formula or width table")
+	}
 	widthValid := m.validWidth()
 	if p.Product == SingleStage {
 		widthValid = m.MaxWidthBPS > 0 && m.MaxWidthBPS < 10_000
@@ -134,6 +163,18 @@ func (p Policy) Validate() error {
 			width, err := m.DNT.WidthPPB(MinMultiplier)
 			if err != nil || width <= 0 || width > m.MaxWidthBPS*100_000 {
 				return errors.New("invalid or out-of-bounds Brownian pricing")
+			}
+		} else if ppb {
+			if len(m.MultiplierWidthsPPB) != len(p.Multipliers) {
+				return errors.New("PPB pricing requires exactly the configured payouts")
+			}
+			previous := int64(1_000_000_000)
+			for _, multiplier := range p.Multipliers {
+				width := m.MultiplierWidthsPPB[multiplier]
+				if width <= 0 || width >= previous || width > m.MaxWidthBPS*100_000 {
+					return errors.New("PPB corridors must be positive, bounded and strictly narrower at higher payouts")
+				}
+				previous = width
 			}
 		} else {
 			if len(m.MultiplierWidthsPPM) != len(p.MultiplierOptions()) {
@@ -260,6 +301,7 @@ type Quote struct {
 }
 type Stage struct {
 	AcceptedSequence uint64 `json:"accepted_sequence"`
+	ResolvedSequence uint64 `json:"resolved_sequence,omitempty"`
 	ID               string `json:"id"`
 	Terms            Quote  `json:"terms"`
 	Start            int64  `json:"start"`
@@ -304,6 +346,7 @@ type State struct {
 	Oracles        map[string]*Oracle     `json:"oracles,omitempty"`
 	Recovery       *RecoveryState         `json:"recovery,omitempty"`
 	Local          *LocalState            `json:"local,omitempty"`
+	Capital        *CapitalState          `json:"capital,omitempty"`
 	PolicyHistory  map[string]Policy      `json:"policy_history"`
 	Policy         Policy                 `json:"policy"`
 	Sequence       uint64                 `json:"sequence"`
@@ -335,6 +378,9 @@ func NewState(p Policy) (State, error) {
 	s := State{Policy: p, PolicyHistory: map[string]Policy{p.Version: p}, Accounts: map[string]*Account{}, Quotes: map[string]Quote{}, Stages: map[string]*Stage{}, Deposits: map[string]*Deposit{}, Withdrawals: map[string]*Withdrawal{}, Epochs: []Epoch{}, Oracle: Oracle{Sources: map[string]Feed{}, ReturnsBPS: []int64{}}}
 	if p.Recovery != nil {
 		s.Recovery = &RecoveryState{Mode: "open", Losses: []RiskLoss{}}
+	}
+	if p.Capital != nil {
+		s.Capital = &CapitalState{UnfundedByMarket: map[string]int64{}}
 	}
 	return s, nil
 }

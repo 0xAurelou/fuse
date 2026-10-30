@@ -1,0 +1,2 @@
+# Numerical fitting for the offline pre-entry pricing research (Python 3.9–3.12).
+numpy==1.26.1

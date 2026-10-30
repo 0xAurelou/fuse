@@ -1,0 +1,139 @@
+/* Narrow windows retain the illustrated three-card desk. */
+.degen-lounge,.degen-overview{display:contents}
+
+/* Fullscreen: three readable trading lanes on one quiet surface. */
+@media(min-width:1180px){
+  .degen-shell,.degen-shell .workspace{background:#10141d}
+  .degen-shell .topbar{height:58px;background:#10141d;border-top:0;border-bottom:1px solid #303540}
+  .degen-shell .terminal-wordmark{font-size:28px;letter-spacing:-1px}
+  .degen-shell .degen-switch.is-on{background:#171c27;border-color:#48505f;box-shadow:none;color:#f1c7df}
+  .degen-shell .degen-desk{display:grid;grid-template-columns:minmax(260px,1fr) minmax(650px,auto);isolation:auto}
+  .degen-desk::before{display:none}
+  .degen-desk>.desk-toolbar{order:0;grid-column:1;height:56px;border-bottom:0}
+  .degen-desk>.degen-overview{order:1;grid-column:2;display:flex;align-items:center;justify-content:flex-end;gap:24px;min-width:0;min-height:56px;margin:0}
+  .degen-desk>.market-grid{order:3;grid-column:1/-1}
+  .degen-desk>.desk-balances,.degen-desk>.desk-error{order:2;grid-column:1/-1}
+  .degen-desk>.degen-lounge{order:4;grid-column:1/-1}
+  .degen-desk>.positions-panel{order:5;grid-column:1/-1}
+  .degen-desk>.desk-bottom{order:6;grid-column:1/-1}
+  .degen-desk .desk-status,.degen-desk .desk-contract{display:none}
+  .degen-overview .paper-account-strip{border:0;min-height:48px;padding:0 8px;gap:24px}
+  .degen-overview .paper-account-strip>div{gap:4px;font-size:11px;color:#a7afbc}
+  .degen-overview .paper-account-strip strong{font-size:18px;color:#f4f1eb}
+  .degen-overview .paper-account-strip b{font-size:12px;color:#dde1e8}
+  .degen-overview .paper-account-strip>div:first-child{padding-right:24px;border-color:#303540}
+  .degen-overview .paper-account-caption{display:none}
+  .degen-overview .degen-summary{min-height:48px;justify-content:flex-end;border:0;flex:1;padding:0}
+  .degen-overview .degen-market-label,.degen-overview .degen-summary>div>span:nth-child(2){display:none}
+  .degen-overview .degen-summary>div{gap:18px;align-items:center}
+  .degen-overview .degen-summary>div>span{display:flex;flex-direction:column;align-items:flex-start;gap:3px;font-size:12px;color:#a7afbc}
+  .degen-overview .degen-summary b{font-size:16px;color:#f4f1eb}
+  .degen-overview .enter-all{background:#f4eee5;border:1px solid #f4eee5;color:#171c24;min-height:42px;padding:10px 20px;font-size:14px;border-radius:4px;box-shadow:none}
+  .degen-overview .enter-all:hover:not(:disabled){background:#fffaf2;color:#171c24}
+  .degen-overview .enter-all:disabled{background:#262c37;border-color:#434b59;color:#a1a9b7}
+  .degen-shell .market-grid.three-markets{display:flex;flex-direction:column;gap:0;border-top:1px solid #303540;overflow:visible;padding:0}
+  .degen-shell .market-terminal{display:grid;grid-template-columns:minmax(330px,1.15fr) minmax(300px,1fr) minmax(360px,1.05fr);grid-template-rows:minmax(188px,auto);column-gap:16px;position:relative;overflow:hidden;border:0;border-bottom:1px solid #303540;border-radius:0;background:#10141d;box-shadow:none;min-width:0}
+  .degen-shell .market-terminal.has-position{background:#151a25;box-shadow:inset 3px 0 var(--market-accent)}
+  .degen-desk .market-body,.degen-desk .market-chart-column{display:contents}
+  .degen-desk .market-world{grid-column:1;grid-row:1;align-self:stretch;position:relative;inset:auto;width:220px;height:auto;min-height:188px;background:none;border:0;overflow:hidden}
+  .degen-desk .market-world::after{display:none}
+  .degen-desk .market-world-image{top:-12px;right:auto;left:-10px;width:235px;height:313px;object-fit:contain;transition:none;transform:none}
+  .degen-desk .market-world-caption{left:8px;top:11px;bottom:auto;gap:0;text-shadow:none}
+  .degen-desk .market-world-caption>span,.degen-desk .market-world-index{display:none}
+  .degen-desk .market-world-caption>strong{font-size:16px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--market-accent)}
+  .degen-desk .market-header{grid-column:1;grid-row:1;align-self:start;position:relative;margin:31px 0 0 228px;padding:0;height:auto;min-height:40px;background:none;border:0;display:block}
+  .degen-desk .market-symbol{gap:9px}
+  .degen-desk .asset-code{background:#1b2230;border-color:#38404f;box-shadow:none;color:var(--market-accent);width:29px;height:29px;font-size:15px}
+  .degen-desk .market-symbol h2{font-size:18px;font-weight:600;color:#f4f1eb;letter-spacing:0}
+  .degen-desk .market-symbol h2>span{font-size:12px;color:#a7afbc}
+  .degen-desk .market-name{font-size:12px;color:#a7afbc}
+  .degen-desk .feed-state{font:10px var(--font);letter-spacing:0;margin:8px 0 0 38px;color:#aab7b5}
+  .degen-desk .market-price-row{grid-column:1;grid-row:1;align-self:center;justify-self:stretch;margin:38px 0 0 228px;padding:0;height:44px;gap:6px;background:none;flex-wrap:wrap;align-content:center}
+  .degen-desk .market-price-row>strong{font-family:var(--font);font-size:32px;line-height:1.2;font-weight:600;letter-spacing:-.8px;color:#f4f1eb}
+  .degen-desk .market-price-row>span{font-size:10px;align-self:center;margin-top:3px;color:#a7afbc}
+  .degen-desk .market-info{display:none}
+  .degen-desk .market-chart{grid-column:2;grid-row:1;align-self:center;height:164px;margin:12px 0 12px 0;background:none;border:0;filter:none}
+  .degen-desk .market-plot{filter:none}
+  .degen-desk .market-plot path:not(.chart-line-shadow){stroke:#eeeef2;stroke-width:1.5}
+  .degen-desk .market-plot>line[stroke="currentColor"]{stroke:var(--market-accent);stroke-width:1;filter:none}
+  .degen-desk .market-plot path.chart-line-shadow{stroke:#10141d;stroke-width:4}
+  .degen-desk .chart-instruments{top:0;left:0;right:0;font-size:11px;color:#a7afbc}
+  .degen-desk .chart-instruments>span:first-child{visibility:hidden}
+  .degen-desk .chart-clock{font-family:var(--font);font-size:14px;background:#141a25;border:1px solid #3c4553;color:#e7e9ef;padding:4px 8px;box-shadow:none}
+  .degen-desk .barrier-price{right:0;background:#10141df0;border:0;border-left:1px solid var(--market-accent);color:#e7e9ef;font-size:12px;padding:3px 5px;box-shadow:none}
+  .degen-desk .barrier-price:before{font-family:var(--font);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--market-accent)}
+  .degen-desk .barrier-price.upper:before{content:'Upper'}
+  .degen-desk .barrier-price.lower:before{content:'Lower'}
+  .degen-desk .chart-axis{bottom:0;font-family:var(--font);font-size:10px;color:#929ba9;text-shadow:none}
+  .degen-desk .market-time-track{display:none}
+  .degen-desk .market-levels{display:none}
+  .degen-desk .chart-bottom-line{grid-column:2;grid-row:1;align-self:end;justify-self:end;background:none;border:0;padding:0 0 3px;line-height:1}
+  .degen-desk .chart-bottom-line>span{display:none}
+  .degen-desk .chart-bottom-line>button{font-size:10px;color:#a7afbc}
+  .degen-desk .market-ticket{grid-column:3;grid-row:1;align-self:center;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-areas:'outcome outcome outcome outcome outcome outcome' 'stake-label stake-label stake-label payout-label payout-label payout-label' 'stake stake stake payout payout payout' 'payoff payoff payoff payoff submit submit' 'fine fine fine fine fine fine';gap:6px 12px;margin:12px 0;padding:0 12px 0 20px;border-left:1px solid #303540;background:none;min-width:0}
+  .degen-desk .ticket-topline{display:none}
+  .degen-desk .market-ticket>label{font-size:14px;font-weight:400;line-height:1.25;margin:0;color:#b9c0cb}
+  .degen-desk .market-ticket>label>span{display:inline;font-size:10px;color:#929ba9}
+  .degen-desk .terminal-input,.degen-desk .terminal-select select{background:#1a202c;border:1px solid #414b5c;border-radius:4px;color:#eeeef2;box-shadow:none}
+  .degen-desk .terminal-input{padding:0 10px}
+  .degen-desk .terminal-input input{height:40px;font-family:var(--font);font-size:20px;font-weight:500;color:#eeeef2}
+  .degen-desk .terminal-input>span{font-size:10px;color:#a7afbc}
+  .degen-desk .terminal-select select{height:42px;font-family:var(--font);font-size:20px;font-weight:500}
+  .degen-desk .terminal-select option{background:#1a202c}
+  .degen-desk .terminal-select>svg{top:14px;color:#a7afbc}
+  .degen-desk .terminal-payoff{display:flex;align-items:flex-end;gap:16px;border:0;padding:0;margin:6px 0 2px;min-width:0}
+  .degen-desk .terminal-payoff>div{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:0;min-width:0}
+  .degen-desk .terminal-payoff>div:first-child{margin:0}
+  .degen-desk .terminal-payoff>div:nth-child(2){display:none}
+  .degen-desk .terminal-payoff dt{font-size:11px;color:#a7afbc;white-space:nowrap}
+  .degen-desk .terminal-payoff dd{font-family:var(--font);font-size:14px;font-weight:600;color:#eeeef2;line-height:1.2;white-space:nowrap}
+  .degen-desk .terminal-payoff>div:first-child dd{font-size:26px;letter-spacing:-.5px;color:var(--market-accent)}
+  .degen-desk .market-terminal .terminal-submit{align-self:end;min-height:42px;margin:6px 0 2px;padding:8px 10px;font-size:14px;font-weight:600;border-radius:4px;gap:5px;box-shadow:none}
+  .degen-desk .market-terminal:not(.has-position) .terminal-submit:not(:disabled){background:var(--market-accent);border-color:var(--market-accent);color:#131922;box-shadow:none}
+  .degen-desk .terminal-submit>svg{display:none}
+  .degen-desk .terminal-fineprint{font-size:11px;line-height:1.4;margin:3px 0 0;color:#a7afbc}
+  .degen-desk .terminal-error{font-size:12px;line-height:1.4;margin:4px 0;color:#f3a7bd}
+  .degen-desk .market-outcome{font-size:12px;line-height:1.4;margin:0;padding:4px 0;color:#c4cbd6;border-color:#303540}
+  .degen-desk .market-feed-empty{font-size:13px;color:#b9c0cb}
+  .degen-shell .degen-lounge{display:flex;align-items:stretch;gap:16px;margin-top:10px;min-width:0;border-bottom:1px solid #303540}
+  .degen-lounge .club-music{flex:1;display:grid;grid-template-columns:240px minmax(0,1fr);align-items:center;gap:28px;min-width:0;margin:0;padding:10px 8px;border:0;border-radius:0;background:none;color:#a7afbc;isolation:auto}
+  .degen-lounge .club-music::before,.degen-lounge .club-music::after,.degen-lounge .rave-lasers{display:none}
+  .degen-lounge .club-music-info{max-width:650px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;font-size:12px;text-shadow:none}
+  .degen-lounge .club-music-info>span,.degen-lounge .club-music-info>strong,.degen-lounge .club-music-info>a{grid-column:1}
+  .degen-lounge .club-music-info strong{font-size:18px;font-weight:600;color:#f4f1eb}
+  .degen-lounge .club-music-info>span{font-size:12px;color:#a7afbc}
+  .degen-lounge .club-music-info .club-music-label{font:10px var(--font);letter-spacing:1px;color:#a7afbc}
+  .degen-lounge .club-music-info a{color:#b9c0cb}
+  .degen-lounge .club-music-actions{grid-column:2;grid-row:2/5;align-self:center;gap:10px}
+  .degen-lounge .club-music-start{grid-column:2;grid-row:1;align-self:center}
+  .degen-lounge .club-music-change,.degen-lounge .club-music-start{min-height:38px;padding:8px 13px;background:#1a202c;border:1px solid #414b5c;color:#eeeef2;font-size:12px;border-radius:4px}
+  .degen-lounge .club-music-editor{grid-column:1/-1;font-size:12px}
+  .degen-lounge .club-music-editor .club-music-actions{grid-column:auto;grid-row:auto}
+  .degen-lounge .vtuber-companion{position:relative;inset:auto;flex:0 0 210px;width:210px;height:220px;margin:0;z-index:1}
+  .degen-lounge .vtuber-toolbar{right:0;max-width:210px;background:#141a25;border-color:#414b5c;backdrop-filter:none;box-shadow:none}
+  .degen-lounge .vtuber-label{font-size:7px;letter-spacing:0;margin-right:0}
+  .degen-lounge .vtuber-toolbar button{min-width:23px;padding-inline:4px}
+  .degen-lounge .vtuber-restore{position:static;align-self:flex-end;margin-bottom:10px;background:#1a202c;border-color:#414b5c;backdrop-filter:none}
+  .degen-desk .positions-panel{margin-top:12px;border-color:#303540;border-radius:4px;background:#10141d}
+  .degen-desk .positions-heading{border-color:#303540}
+  .degen-desk .position-tabs>button{font-size:13px;color:#a7afbc}
+  .degen-desk .position-tabs>button[aria-selected=true]{color:#f4f1eb}
+  .degen-desk .position-tabs>button[aria-selected=true]:after{background:#c3c9d3}
+  .degen-desk .positions-panel th,.degen-desk .positions-panel td{border-color:#303540;font-size:12px}
+}
+
+@media(min-width:1180px) and (max-width:1350px){
+  .degen-desk .market-terminal{column-gap:12px;grid-template-columns:minmax(260px,.95fr) minmax(280px,1.2fr) minmax(320px,1.1fr)}
+  .degen-desk .market-world{width:140px}
+  .degen-desk .market-world-image{left:-20px;width:180px;height:240px}
+  .degen-desk .market-header{margin-left:143px}
+  .degen-desk .market-price-row{margin-left:143px}
+  .degen-desk .market-price-row>strong{font-size:23px}
+  .degen-desk .market-symbol h2{font-size:14px}
+  .degen-desk .market-symbol h2>span{font-size:11px}
+  .degen-desk .market-ticket{padding-left:12px;column-gap:10px}
+  .degen-desk .terminal-payoff{gap:12px}
+  .degen-desk .terminal-payoff>div:first-child dd{font-size:20px}
+  .degen-overview .paper-account-strip{gap:18px}
+  .degen-overview .paper-account-strip>div:first-child{padding-right:18px}
+}

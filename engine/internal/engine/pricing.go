@@ -6,6 +6,7 @@ import (
 )
 
 const BrownianFirstMode = "brownian-first-mode-v1"
+const FixedWidthPPB = "fixed-width-ppb-v1"
 const pricingQ int64 = 1_000_000_000_000
 const pricingPi int64 = 3_141_592_653_590
 const pricingLn2 int64 = 693_147_180_560

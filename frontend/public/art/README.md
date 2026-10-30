@@ -2,7 +2,15 @@
 
 The former six-tile Floor trombinoscope has been removed. Its original adult character images are retained, with [asset paths and generation prompts](club-cast-prompts.md), as artwork only. They are not rigged Spine or Live2D models. The [new character rigging brief](../../../docs/CHARACTER_ANIMATION_BRIEF.md) records the assets and runtime prerequisites for a genuine skeletal animation replacement.
 
-The current Degen backdrop uses **rave-sigil.svg**, an original geometric tribal-style light pattern, with CSS laser fans and ambient neon gradients in `app/rave-lights.css`. Patterns rotate in opposite directions across the three charts, and the music panel carries a matching projection. The DJ toggle pauses every light layer; reduced-motion preferences disable the animations. Chart lines, prices and controls remain separate from the decorative layers. These effects use CSS timing and are not synchronized to the YouTube audio.
+The Degen market cards use the original three cast portraits again: **Rose for BTC**, **Mint for HYPE**, and **Violet for ETH**. The transparent character images sit above the charts with matching pink, mint, and violet accents. **dancer-rose-card.webp**, **dancer-mint-card.webp**, and **dancer-violet-card.webp** are optimized 648 × 864 copies of the original PNGs, with no artwork changes. The original images and [generation prompts](club-cast-prompts.md) are preserved. The cast is decorative; chart data and controls remain independent of the artwork.
+
+The previous vault, hypercar, and crystal-city artwork is retained as unused assets. Its generation details and prompts are recorded in [market-worlds.md](market-worlds.md).
+
+The fullscreen Degen desk uses three horizontal rows on a flat navy surface (`app/degen-rows.css`), with the radio and companion below the markets. Narrow windows retain the three-card composition. The combined stake and **Enter all 3** remain visible above the markets, with their original session/feed/position readiness checks.
+
+**bitcoin.svg** and **ethereum.svg** are unmodified source icons from [Simple Icons](https://github.com/simple-icons/simple-icons), retrieved on 2026-10-27. Sources: [Bitcoin](https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/bitcoin.svg), [Ethereum](https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/ethereum.svg); project license: [CC0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md). HYPE retains its existing letter marker.
+
+The music panel retains **rave-sigil.svg**, an original geometric light pattern, with CSS laser fans and ambient neon gradients in `app/rave-lights.css`. The market cards no longer show the repeating sigils or laser overlays. The DJ toggle pauses the radio light layers; reduced-motion preferences disable their animations. These effects use CSS timing and are not synchronized to the YouTube audio.
 
 **nightclub.png** (1942 × 809) and the quieter **after-hours.png** are retained as previous background directions. The current **dj-cat.png** mascot (1254 × 1254, transparent) and both former backgrounds were generated using the built-in Image Gen tool. Their prompts are preserved below.
 

@@ -1,0 +1,60 @@
+{
+  "review_type": "internal_implementation_review",
+  "independent_external_review": false,
+  "production_approved": false,
+  "executed_evidence": ".local/release-daily-bindings/20261030-v18/",
+  "scope": "Distinct durable void queue/refund receipt proofs and outbound recovery.",
+  "decisions": {
+    "authority": "New queue authorizations still require the live fenced canonical writer and both financial roles. Previously authenticated void completion uses its confirmed original queue and immutable onchain right; no financial writer, new financial role signatures, expiry extension or current financial generation is required.",
+    "queue_is_unpaid": "Queue proof persists the obligation while original stake and underwriting remain reserved. Transaction claim/lane is released only atomically with that proof.",
+    "completion_is_custody_credit": "Completion proof recognizes the original stake credited once to the original owner in custody. It does not assert a physical customer USDC withdrawal.",
+    "historical_signed_call": "Queue events lack a digest/evidence marker, so reconciliation additionally verifies exact actual transaction calldata, chain, target, zero value and transaction hash. Successful execution through pinned immutable custody code proves authorization at inclusion; current roles need not validate historical signatures after rotation.",
+    "later_source_prefix": "The original signed evidence is retained. A later prefix may have a new journal/oracle commitment, but every final-decision field including owner, stake, canonical/observed time and original acceptance commitment must agree.",
+    "durability": "Queue proof/right and terminal processing state commit together. Completion proof, paid right and terminal processing state commit together. A forced terminal-write failure rolled all completion writes back.",
+    "nonce_recovery": "The existing dedicated-payer raw-transaction lane remains in force for queue and completion; no new nonce is assigned on an uncertain send.",
+    "completion_identity": "No financial generation participates in completion intent identity. Resume remains stable through signer rotation; its old plan deadline is not an expiry of the recorded right.",
+    "historical_generation": "Actual transaction generation is now derived from pre/post-block AccessController version and all ordered SignerRotated events, excluding rotations after the direct queue transaction. False self-consistent historical generation metadata is rejected."
+  },
+  "executed_checks": [
+    "three shared-engine outcomes and existing cash-batch failures/recovery retained",
+    "queue and refund lost replies followed by PostgreSQL restart",
+    "queue credit remains zero and exposure/stake remain locked",
+    "actual queue calldata differs from self-consistent asserted authorization: rejected",
+    "modified queue/refund events, refund owner and unexpected pool transfer: rejected",
+    "raw/restored proof cannot bypass fresh receipt verification",
+    "later native journal prefix preserves the original queue proof",
+    "financial writer connection actually closed before completion",
+    "betting paused, signer rotated again and 601 seconds passed after raw completion preparation",
+    "completion requires no new financial signatures and credits exact original stake once",
+    "terminal refund-write failure rolls back proof and paid right while retaining original queue",
+    "completed retries neither broadcast nor readmit the refunded right",
+    "unit receipt tests reject missing/duplicate outcomes, changed time/PnL/ticket, removed/replaced/nil logs and pool movement"
+  ],
+  "assumptions": [
+    "Pinned immutable contracts and authenticated honest canonical RPC views.",
+    "PostgreSQL durability and a dedicated payer; injected transaction signer never broadcasts.",
+    "Synthetic gas/fee values and confirmation depth are not production calibration."
+  ],
+  "remaining": [
+    "approved production fee and recovery policy",
+    "unclassified/partial or changed-authority external executions",
+    "idle and multiple nonce gaps",
+    "live worker and admission/oracle ordering",
+    "native daily capital projection",
+    "target-chain gas/finality and scaling",
+    "independent external review"
+  ],
+  "final_source_sha256": {
+    "engine/internal/dailyrelay/void.go": "520af223069235de26fea8a672edce760a2d8f65289569fba4d778762abd1573",
+    "engine/internal/dailyrelay/void_store.go": "81da1b2138167d610984cda549471358681ecfd7c1bdeedf7edf64494d743850",
+    "engine/internal/dailyrelay/void_test.go": "6705b692819973848f784e3cdca623f082716162ff0cfccb9c85f666408418a8",
+    "engine/internal/dailyrelay/proof_test.go": "4edacb48d9e33a0683c2011885aa21f8de3ef3d70e550712095577e972969f81",
+    "engine/internal/dailyrelay/outbox.go": "4372572d1ab6c77dcd21af5f05cc256597bce9f419795a94f6334d93350a4818",
+    "engine/internal/dailyrelay/plan.go": "4c26a326b40b141e1e163f3a8dbbad8a9fccd66b78e7849d10a11e146fed284c",
+    "engine/internal/dailyrelay/reader.go": "e4469176852c5791ba0240682b463797bba94c2ae460b4d4a62db8811b4d3e4f",
+    "engine/internal/dailyrelay/store.go": "4e0e382ddec8e2c459cd26e6d8db38564d77974fad910eb26e642eec084eaccd",
+    "engine/internal/contracts/rpc.go": "03283c39afa2ff389163beea4732f1876b52d10ffe8579ede358adec791bad8e",
+    "engine/internal/localdev/daily_void_e2e_test.go": "71752e1553123b92d0f03a90141a89ab6673c5760685b21fd055222e18122eb8",
+    "engine/internal/localdev/daily_relay_e2e_test.go": "43bac9938bff20de72a24589b589dca74675e2f82894be54b5991a2b48c40ac0"
+  }
+}

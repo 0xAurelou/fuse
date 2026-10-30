@@ -77,7 +77,6 @@ contract RedemptionReserve is Module, ReentrancyGuard {
     function openRedemptionEpoch(uint64 start, uint64 end, uint16 penaltyBps)
         external
         onlyRole(access.REDEMPTION_SCHEDULER())
-        whenTradingActive
     {
         uint256 supply = token.totalSupply();
         if (
@@ -90,7 +89,13 @@ contract RedemptionReserve is Module, ReentrancyGuard {
         if (start == block.timestamp) _startEpoch();
     }
 
-    function startEpoch() external nonReentrant whenTradingActive {
+    /// @notice Betting pauses do not suspend already funded token redemptions.
+    /// @dev Explicit capability lets clients retain old deployment semantics.
+    function supportsPausedRedemptions() external pure returns (bool) {
+        return true;
+    }
+
+    function startEpoch() external nonReentrant {
         _startEpoch();
     }
 
@@ -110,7 +115,7 @@ contract RedemptionReserve is Module, ReentrancyGuard {
         emit RedemptionEpochOpened(latestEpoch, epoch.start, epoch.end, epoch.penaltyBps, supply, available);
     }
 
-    function requestRedeem(uint256 amount) external nonReentrant whenTradingActive {
+    function requestRedeem(uint256 amount) external nonReentrant {
         RedemptionEpoch storage epoch = epochs[latestEpoch];
         if (latestEpoch == 0 || amount == 0 || block.timestamp < epoch.start || block.timestamp >= epoch.end) {
             revert InvalidRequest();

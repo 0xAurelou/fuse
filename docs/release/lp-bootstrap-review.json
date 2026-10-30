@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "date": "2026-10-30",
+  "scope": [
+    "src/LPIncentiveDistributor.sol"
+  ],
+  "dependent_sources": [
+    "src/LPShareVault.sol",
+    "src/LPVault.sol",
+    "src/AccessController.sol",
+    "src/FUSEToken.sol",
+    "src/AllocationEscrows.sol",
+    "src/common/Module.sol"
+  ],
+  "internal_review_only": true,
+  "independent_external_review": false,
+  "production_approved": false,
+  "method": "solidity-auditor skill; twelve lenses grouped across three concurrent workers due runtime limit. This is not twelve independent reviewers.",
+  "skill_path": "/Users/aurelou/.codex/skills/solidity-auditor/SKILL.md",
+  "skill_sha256": "1c1cf4e99d042e7aadc56b622d97a07d3286f4786838a05510697c814d1e983f",
+  "installed_skill_version": "3",
+  "observed_upstream_version": "4.1",
+  "workers": [
+    {
+      "task": "/root/bootstrap_math_access",
+      "lenses": [
+        "math",
+        "access",
+        "economic security",
+        "execution trace"
+      ],
+      "findings": [],
+      "leads": []
+    },
+    {
+      "task": "/root/bootstrap_invariants",
+      "lenses": [
+        "invariants",
+        "periphery",
+        "first principles",
+        "asymmetry"
+      ],
+      "findings": [],
+      "leads": []
+    },
+    {
+      "task": "/root/bootstrap_boundaries",
+      "lenses": [
+        "boundaries",
+        "numerical gaps",
+        "trust gaps",
+        "flow gaps"
+      ],
+      "findings": [],
+      "leads": []
+    }
+  ],
+  "unique_contract_function_findings": 0,
+  "unique_contract_function_findings_covered": 0,
+  "reviewed_source_sha256": {
+    "src/LPIncentiveDistributor.sol": "1a03e6981d53c2265eab07a4a0a562aba95783073cf1bc1decb4c5fb5df6949a",
+    "src/LPShareVault.sol": "c644504219e190d9f4663e7fcbc92b463cdd681d48c60ee60267b58962ab3a68",
+    "src/LPVault.sol": "4033820ddf0634f4ae6e3b367adaa037af4a4ddd901a87d0c7cb566634577c93",
+    "src/AccessController.sol": "4b12caf67f4ba03b2a31d1bcb63e643e9b287833fc3d56e86542ff4fd21a04e7",
+    "src/FUSEToken.sol": "3ffdbdf19873603bcc3deae7fac73f36b6c463b357af192c5fe936342410cf3c",
+    "src/AllocationEscrows.sol": "8ecd446a2c5cefad6d6adf5d2bb5cb1d1ecf3ccd95809fcd1db7d3f1d6628098",
+    "src/common/Module.sol": "364efe3c87bf940a7ac4153359164d239dc895b289919df7d2bfef5289779915"
+  },
+  "review_bundle_sha256": {
+    "worker-3-bundle.md": "5e25fb4d24b571116dbde66b07681a7a91ae92b97afc70e2d22e2b411a21dd92",
+    "worker-2-bundle.md": "155cda84a79e9312626d90867bd96dfb06f3a199bb87982bdc0da431558be78b",
+    "source.md": "48fca68215f0021db55e46118891f6c8c4ce714413663133235e2a4303a4f123",
+    "worker-1-bundle.md": "d0553af7c3a643b010d9bd9730f98ea8411a5352e2a5d50f73442bda854ac21c"
+  },
+  "limits": [
+    "No proof of absence of vulnerabilities.",
+    "The legacy configureCampaign path remains deliberately untapered; release must use configureBootstrapCampaign.",
+    "Liability journal truth remains dual-signer trusted; utilization does not establish organic demand or unprofitable LP/player farming.",
+    "Current LPShareVault still has the preexisting 48-hour queue and zero-exposure window. New daily capital-account/free-withdrawal requirements are not reconciled.",
+    "No deployment, public-chain activation, independent external contract or pricing sign-off."
+  ]
+}

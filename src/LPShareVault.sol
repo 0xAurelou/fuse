@@ -60,12 +60,14 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
         uint256 claimedShares;
         uint256 claimedAssets;
         bool fulfilled;
+        address owner;
     }
     bytes32 public constant CAPACITY_TYPEHASH = keccak256(
         "CapacityAuthorization(uint64 epoch,bytes32 checkpointRoot,uint256 eligibleDemandUSDC,uint256 nonce,uint256 deadline,uint256 signatureVersion)"
     );
     uint256 public constant EXIT_DELAY = 48 hours;
     uint256 public constant MAX_NAV_AGE = 1 hours;
+    uint256 public constant MIN_REDEEM_ASSETS = 1e6;
     ILPUnderwriter public immutable underwriter;
     Phase public phase;
     uint256 public hardDepositCap = 5_000_000e6;
@@ -79,7 +81,10 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
     mapping(address => bool) public protocolCapital;
     mapping(address => mapping(address => bool)) public isOperator;
     mapping(uint256 => ExitRequest) public exitRequests;
+    /// @notice Active request by share owner, including fulfilled but unclaimed exits.
     mapping(address => uint256) public activeRequest;
+    /// @notice Claim lookup by controller. Delegated controllers must consent to the requester.
+    mapping(address => uint256) public controllerRequest;
 
     error InvalidRequest();
     error NAVUnavailable();
@@ -275,16 +280,29 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
         return _request(balanceOf(owner), owner, owner);
     }
 
+    /// @notice Minimum request size at the current accounted NAV, rounded up to cover 1 USDC.
+    function minRedeemShares() public view returns (uint256) {
+        return _convertToShares(MIN_REDEEM_ASSETS, Math.Rounding.Ceil);
+    }
+
     function _request(uint256 shares, address controller, address owner) private returns (uint256 id) {
         if (
-            phase == Phase.Protocol || shares == 0 || controller == address(0) || owner == address(this)
-                || activeRequest[controller] != 0
+            phase == Phase.Protocol || shares < minRedeemShares() || controller == address(0) || owner == address(this)
+                || activeRequest[owner] != 0 || controllerRequest[controller] != 0
         ) revert InvalidRequest();
+        if (controller != owner) {
+            if (!isOperator[owner][controller]) revert Unauthorized();
+            // The owner's approval alone is insufficient: anyone can appoint a victim
+            // as their operator. The controller must also authorize use of its slot.
+            _authorizeController(controller);
+        }
         _checkpointAccount(owner);
         _transfer(owner, address(this), shares);
         id = nextRequestId++;
-        activeRequest[controller] = id;
+        activeRequest[owner] = id;
+        controllerRequest[controller] = id;
         ExitRequest storage r = exitRequests[id];
+        r.owner = owner;
         r.controller = controller;
         r.shares = shares;
         r.readyAt = uint64(block.timestamp + EXIT_DELAY);
@@ -332,12 +350,12 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
     }
 
     function maxRedeem(address controller) public view override returns (uint256) {
-        ExitRequest storage r = exitRequests[activeRequest[controller]];
+        ExitRequest storage r = exitRequests[controllerRequest[controller]];
         return r.fulfilled ? r.shares - r.claimedShares : 0;
     }
 
     function maxWithdraw(address controller) public view override returns (uint256) {
-        ExitRequest storage r = exitRequests[activeRequest[controller]];
+        ExitRequest storage r = exitRequests[controllerRequest[controller]];
         return r.fulfilled ? r.assets - r.claimedAssets : 0;
     }
 
@@ -348,7 +366,7 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
         returns (uint256 assets)
     {
         _authorizeController(controller);
-        ExitRequest storage r = exitRequests[activeRequest[controller]];
+        ExitRequest storage r = exitRequests[controllerRequest[controller]];
         if (shares == 0 || shares > maxRedeem(controller)) revert InvalidRequest();
         assets = Math.mulDiv(r.claimedShares + shares, r.assets, r.shares) - r.claimedAssets;
         _claim(r, receiver, shares, assets);
@@ -361,7 +379,7 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
         returns (uint256 shares)
     {
         _authorizeController(controller);
-        ExitRequest storage r = exitRequests[activeRequest[controller]];
+        ExitRequest storage r = exitRequests[controllerRequest[controller]];
         if (assets == 0 || assets > maxWithdraw(controller)) revert InvalidRequest();
         shares = assets == maxWithdraw(controller)
             ? maxRedeem(controller)
@@ -371,6 +389,7 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
 
     function claimExitFor(address owner) external onlyUnderwriter nonReentrant returns (uint256 assets) {
         ExitRequest storage r = exitRequests[activeRequest[owner]];
+        if (r.controller != owner) revert InvalidRequest();
         uint256 shares = maxRedeem(owner);
         if (shares == 0) revert InvalidRequest();
         assets = maxWithdraw(owner);
@@ -384,7 +403,10 @@ contract LPShareVault is ERC4626, Module, EIP712, ReentrancyGuard {
     function _claim(ExitRequest storage r, address receiver, uint256 shares, uint256 assets) private {
         r.claimedShares += shares;
         r.claimedAssets += assets;
-        if (r.claimedShares == r.shares) activeRequest[r.controller] = 0;
+        if (r.claimedShares == r.shares) {
+            activeRequest[r.owner] = 0;
+            controllerRequest[r.controller] = 0;
+        }
         underwriter.payExit(receiver, assets);
         emit Withdraw(msg.sender, receiver, r.controller, assets, shares);
     }

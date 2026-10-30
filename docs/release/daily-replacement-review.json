@@ -1,0 +1,56 @@
+{
+  "review_type": "internal_implementation_review",
+  "independent_external_review": false,
+  "production_approved": false,
+  "executed_evidence": ".local/release-daily-bindings/20261030-v18/",
+  "scope": "Durable same-nonce fee replacement and cancellation for the isolated daily settlement coordinator.",
+  "decisions": {
+    "immutable_original": "Original intent, calldata, unsigned/raw transaction and hash remain unchanged. Additional decisions/raw bytes are retained in bounded ordered history.",
+    "fee_only_replacement": "Only payer fees change; nonce, financial signatures, calldata, gas, target, value and chain remain fixed. Both fee cap and tip must strictly exceed earlier retained attempts; node fee-bump requirements remain explicit operator policy.",
+    "cancellation": "A zero-value empty-data 21000-gas self-transfer consumes the same payer nonce. Only its confirmed canonical receipt with no logs and intrinsic gas usage can mark the slot cancelled. It never marks a bet paid or releases accepted onchain payout reservations.",
+    "cancel_authority": "Only the dedicated payer transaction signer is needed. No new financial role signature or canonical writer is needed for a transaction that cannot discharge a bet.",
+    "sticky_cancellation": "A prepared signed cancellation prevents later settlement sends/replacements through the API; all previously signed hashes remain observed because an older transaction may still win.",
+    "crash_recovery": "Decision and exact unsigned variant persist before payer signing. Raw bytes persist before sending. Lost replies never allocate a new nonce or financial authorization.",
+    "actual_winner": "Receipt lookup checks the original and every prepared variant. Any RPC read failure or contradictory receipts halts. Included transaction/hash and attempt index identify the proof transaction; original submission hash remains retained.",
+    "atomic_nonce_release": "Only confirmed cancellation/revert or semantic payment/void proof commits release the lane/claims. A forced cancellation terminal failure rolled back both claims and lane changes.",
+    "unsigned_retirement": "Only an unsigned staged request can be abandoned; it releases neither nonce nor tickets and cannot delete a signed hash."
+  },
+  "executed_checks": [
+    "actual expired prepared authorization cancellation and lost reply/restart",
+    "actual pending EIP1559 fee replacement won and provided the financial proof receipt",
+    "original queued-void transaction won after a signed cancellation was prepared; no losing cancellation broadcast after inclusion",
+    "cancellation preserves LP/custody balances and accepted exposure; no paid-ticket rows",
+    "unconfirmed cancellation awaits depth and retains claims",
+    "triggered cancellation terminal-write failure preserves claims and active lane before retry",
+    "payer-added value is rejected before raw persistence",
+    "cancelled original cannot execute with its consumed payer nonce",
+    "no new financial signatures for fee replacement",
+    "unit checks bind attempt reason, fees, unsigned/raw bytes, hash and nonce; signed attempts cannot become abandoned/staged",
+    "unit receipt-family checks detect older winners, replacement winners, contradictory receipts and outage on an older hash"
+  ],
+  "assumptions": [
+    "PostgreSQL durability, dedicated payer and transaction signer that never broadcasts.",
+    "Pinned immutable contracts and authenticated canonical RPC views.",
+    "Cancellation does not revoke exposed contract authorizations; another sender can still execute them once according to contract rules.",
+    "32 additional attempts is an operational candidate bound, not approved production capacity.",
+    "Synthetic fees/confirmation depth do not validate target-chain policy or finality."
+  ],
+  "remaining": [
+    "approved production fee and recovery policy",
+    "unclassified/partial or changed-authority external executions",
+    "idle and multiple nonce gaps",
+    "live worker and admission/oracle ordering",
+    "native daily capital projection",
+    "target-chain gas/finality and scaling",
+    "independent external review"
+  ],
+  "final_source_sha256": {
+    "engine/internal/dailyrelay/replacement.go": "f3b044b5bd532a34397d7f617a10cdca3c5abcd335260072ce0038e91731363d",
+    "engine/internal/dailyrelay/replacement_test.go": "020c215ba885f5de1ba878a7c13da1b60f0eeacbdc0aaf8ec98d6badd7abf338",
+    "engine/internal/dailyrelay/outbox.go": "4372572d1ab6c77dcd21af5f05cc256597bce9f419795a94f6334d93350a4818",
+    "engine/internal/localdev/daily_replacement_e2e_test.go": "4368f58b9f16be317d753a34f69c4ef0fd117434b67b5ad54f441cebdb9021c4",
+    "engine/internal/localdev/daily_outbox_e2e_test.go": "f2781ce2a9567aaa6b753d5162019454c979c81e80c2b998dd4f62abb523198d",
+    "engine/internal/localdev/daily_void_e2e_test.go": "71752e1553123b92d0f03a90141a89ab6673c5760685b21fd055222e18122eb8",
+    "engine/internal/localdev/daily_relay_e2e_test.go": "43bac9938bff20de72a24589b589dca74675e2f82894be54b5991a2b48c40ac0"
+  }
+}

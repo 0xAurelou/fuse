@@ -13,17 +13,89 @@ import (
 )
 
 type request struct {
-	Kind      string         `json:"kind"`
-	Policy    engine.Policy  `json:"policy"`
-	Command   engine.Command `json:"command"`
-	Cash      int64          `json:"cash"`
-	Fee       int64          `json:"fee"`
-	Exit      int64          `json:"exit"`
-	Path      string         `json:"path"`
-	FinalPath string         `json:"final_path"`
+	Kind      string          `json:"kind"`
+	Policy    engine.Policy   `json:"policy"`
+	Command   engine.Command  `json:"command"`
+	Cash      int64           `json:"cash"`
+	Fee       int64           `json:"fee"`
+	Exit      int64           `json:"exit"`
+	Path      string          `json:"path"`
+	FinalPath string          `json:"final_path"`
+	StageID   string          `json:"stage_id,omitempty"`
+	Corridors []corridorInput `json:"corridors,omitempty"`
+}
+
+type corridorInput struct {
+	Price int64 `json:"price"`
+	Width int64 `json:"width_ppb"`
+}
+
+// An offline arithmetic cross-check of the exact MulDiv used by native quotes.
+// It creates no oracle, pricing approval, financial state or accepted bet.
+func quantizeCorridors(p engine.Policy, input []corridorInput) (any, error) {
+	if p.Mode != "paper" || p.Product != engine.SingleStage {
+		return nil, fmt.Errorf("corridor research requires single-stage paper policy")
+	}
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+	if len(input) == 0 || len(input) > 2048 {
+		return nil, fmt.Errorf("1..2048 corridor vectors required")
+	}
+	type row struct {
+		Price int64 `json:"price"`
+		Width int64 `json:"width_ppb"`
+		Delta int64 `json:"delta"`
+		Valid bool  `json:"valid"`
+	}
+	rows := make([]row, 0, len(input))
+	for _, v := range input {
+		if v.Price <= 0 || v.Price > engine.Limit || v.Width <= 0 || v.Width >= 1_000_000_000 {
+			return nil, fmt.Errorf("invalid corridor input")
+		}
+		delta, err := engine.MulDiv(v.Price, v.Width, 1_000_000_000)
+		rows = append(rows, row{v.Price, v.Width, delta, err == nil && delta > 0 && v.Price+delta <= engine.Limit})
+	}
+	return rows, nil
 }
 
 type bridge struct{ state *engine.State }
+
+// pricingGrid exports the actual integer pricing function without constructing
+// a trading state. It is an offline research operation, not a quote/accept API.
+func pricingGrid(p engine.Policy) (any, error) {
+	if p.Mode != "paper" || p.Product != engine.SingleStage {
+		return nil, fmt.Errorf("pricing research requires a single-stage paper policy")
+	}
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+	type vector struct {
+		Asset         string `json:"asset"`
+		Multiplier    int64  `json:"multiplier"`
+		VolatilityPPM int64  `json:"volatility_30s_ppm"`
+		EdgeBPS       int64  `json:"house_edge_bps"`
+		WidthPPB      int64  `json:"width_ppb"`
+	}
+	rows := []vector{}
+	for _, asset := range []string{"BTC", "ETH", "HYPE"} {
+		if !p.HasAsset(asset) {
+			continue
+		}
+		model := p.AssetModel(asset)
+		if model.DNT == nil {
+			return nil, fmt.Errorf("pricing grid requires the Brownian formula in every enabled market")
+		}
+		for _, multiplier := range p.MultiplierOptions() {
+			width, err := model.DNT.WidthPPB(multiplier)
+			if err != nil {
+				return nil, err
+			}
+			rows = append(rows, vector{asset, multiplier, model.DNT.VolatilityPPM, model.DNT.HouseEdgeBPS, width})
+		}
+	}
+	return rows, nil
+}
 
 func verify(path string, p engine.Policy, finalPath string) (any, error) {
 	s, err := engine.NewState(p)
@@ -79,6 +151,12 @@ func verify(path string, p engine.Policy, finalPath string) (any, error) {
 }
 
 func (b *bridge) execute(r request) (any, error) {
+	if r.Kind == "quantize_corridors" {
+		return quantizeCorridors(r.Policy, r.Corridors)
+	}
+	if r.Kind == "pricing_grid" {
+		return pricingGrid(r.Policy)
+	}
 	if r.Kind == "verify" {
 		return verify(r.Path, r.Policy, r.FinalPath)
 	}
@@ -100,6 +178,8 @@ func (b *bridge) execute(r request) (any, error) {
 		return nil, fmt.Errorf("initialize first")
 	}
 	switch r.Kind {
+	case "settlement_outcome":
+		return b.state.SettlementOutcome(r.StageID)
 	case "sync_lp":
 		if r.Cash < 0 || r.Cash > engine.Limit || r.Fee < 0 || r.Exit < 0 || r.Fee > r.Cash || r.Exit > r.Cash-r.Fee {
 			return nil, fmt.Errorf("invalid projected LP balances")

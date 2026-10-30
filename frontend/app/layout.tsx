@@ -4,7 +4,9 @@ import './terminal.css';
 import './after-hours.css';
 import './club-music.css';
 import './rave-lights.css';
+import './market-worlds.css';
 import './character-stage.css';
+import './degen-rows.css';
 export const metadata: Metadata = {
   title: 'FUSE 100 — Single-stage Trading',
   description: 'BTC, HYPE and ETH. Choose 2×–100× payouts for independent 30-second stages. Live oracle prices with virtual USDC in the local paper desk.',

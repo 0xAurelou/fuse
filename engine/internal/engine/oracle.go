@@ -155,9 +155,15 @@ func (s *State) resolve(p *Stage, status string, at int64) {
 	a := s.account(p.Terms.Account)
 	p.Status = status
 	p.Resolved = at
+	if s.Capital != nil {
+		p.ResolvedSequence = s.Sequence
+	}
 	switch status {
 	case "survived":
 		s.recordRisk(-(p.Terms.Payout - p.Terms.Stake), at)
+		if s.Capital != nil {
+			s.Capital.UnfundedByMarket[AssetName(p.Terms.Asset)] += p.Terms.Payout - p.Funded
+		}
 		if p.Terms.Product == SingleStage {
 			a.Available += p.Funded
 			a.Unfunded += p.Terms.Payout - p.Funded

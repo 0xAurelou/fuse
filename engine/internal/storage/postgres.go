@@ -163,3 +163,20 @@ func (p *Postgres) Close(ctx context.Context) error {
 	defer p.mu.Unlock()
 	return p.conn.Close(ctx)
 }
+
+// AssertHead uses the same non-reconnecting leadership session as Append.
+// A restarted, disconnected or superseded writer cannot authorize payments.
+func (p *Postgres) AssertHead(ctx context.Context, sequence uint64, journalHash string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var generation int64
+	var seq uint64
+	var head string
+	if err := p.conn.QueryRow(ctx, "SELECT generation,sequence,journal_hash FROM fuse_leadership WHERE id").Scan(&generation, &seq, &head); err != nil {
+		return err
+	}
+	if generation != p.generation || seq != sequence || head != journalHash {
+		return errors.New("canonical financial source leadership/head changed")
+	}
+	return nil
+}

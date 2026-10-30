@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "date": "2026-10-30",
+  "scope": [
+    "src/RedemptionReserve.sol"
+  ],
+  "dependent_backend_reviewed": "engine/internal/localdev/tokenomics.go",
+  "internal_review_only": true,
+  "independent_external_review": false,
+  "production_approved": false,
+  "method": "solidity-auditor skill; twelve lenses grouped across three workers due runtime capacity, not twelve independent reviewers",
+  "skill_path": "/Users/aurelou/.codex/skills/solidity-auditor/SKILL.md",
+  "skill_sha256": "1c1cf4e99d042e7aadc56b622d97a07d3286f4786838a05510697c814d1e983f",
+  "installed_skill_version": "3",
+  "observed_upstream_version": "4.1",
+  "workers": [
+    {
+      "task": "/root/bootstrap_math_access",
+      "lenses": [
+        "math",
+        "access",
+        "economic security",
+        "execution trace"
+      ],
+      "findings": [],
+      "leads": []
+    },
+    {
+      "task": "/root/bootstrap_invariants",
+      "lenses": [
+        "invariants",
+        "periphery",
+        "first principles",
+        "asymmetry"
+      ],
+      "findings": [],
+      "leads": []
+    },
+    {
+      "task": "/root/bootstrap_boundaries",
+      "lenses": [
+        "boundaries",
+        "numerical gaps",
+        "trust gaps",
+        "flow gaps"
+      ],
+      "findings": [],
+      "leads": []
+    }
+  ],
+  "unique_contract_function_findings": 0,
+  "unique_contract_function_findings_covered": 0,
+  "reviewed_source_sha256": {
+    "src/RedemptionReserve.sol": "0701c777818506e1e7896318c6266f9ca706b883af116dc2ad0c042adfeb5a6d",
+    "src/FUSEToken.sol": "3ffdbdf19873603bcc3deae7fac73f36b6c463b357af192c5fe936342410cf3c",
+    "src/common/Module.sol": "364efe3c87bf940a7ac4153359164d239dc895b289919df7d2bfef5289779915",
+    "src/common/ExactTransfer.sol": "3ba54e10f78aa404c72f88f58f0b88004561ea6761ed5763af49d6e65f593f20",
+    "src/LPVault.sol": "4033820ddf0634f4ae6e3b367adaa037af4a4ddd901a87d0c7cb566634577c93",
+    "src/AccessController.sol": "4b12caf67f4ba03b2a31d1bcb63e643e9b287833fc3d56e86542ff4fd21a04e7",
+    "engine/internal/localdev/tokenomics.go": "57eba349cd018e8127562dc3884d26bb077b9e9c0557079b89a1721d831d5842"
+  },
+  "review_bundle_sha256": {
+    "worker-3-bundle.md": "083b104f910187df9a31b27f352e4e46e4b313e939237ec834709356eb30e4e4",
+    "worker-2-bundle.md": "9d3e6ec702920028aa78f732135d9c91cd65ec6e85e3ad6a0a74b0845b78313d",
+    "source.md": "ec44265b78b5774b005e7d97a1a8329734ad12edf76cf5ac124eb9f4cdcf7fd9",
+    "worker-1-bundle.md": "b0a6ecf0cb900f9c9cd415f15b9631fbac759acc5c67ded4126d2773d72c2797"
+  },
+  "limits": [
+    "Internal review does not replace independent external review or deployed-bytecode verification.",
+    "Per-bet funded dollar-minimum reward reservations and immutable promised redemption terms remain unimplemented.",
+    "Scheduling, transfer/redemption activation and valid windows remain necessary; no always-instant claim promise.",
+    "Existing immutable deployments remain legacy pause-gated and require a reviewed migration/new deployment.",
+    "Cash token transfer failures retain claim liabilities; no guarantee over unavailable or insolvent external cash assets."
+  ]
+}

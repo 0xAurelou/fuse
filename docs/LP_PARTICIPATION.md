@@ -1,5 +1,16 @@
 # External LP participation
 
+**Release-policy update:** the user's daily-accounting candidate requires
+partial withdrawals whenever capital is free after accepted bets, known wins
+and fee/backing reservations. Future-bet headroom and a delayed daily close
+must not lock free principal. The [current release specification](RELEASE_ECONOMIC_SPEC.md#4-lp-ownership-and-capital-flows)
+and executable reference use that rule. The isolated
+[daily vault/custody candidate](RELEASE_DAILY_LP_INTEGRATION.md) now implements
+these transitions with real test-token settlement and signed net batches
+from shared-engine decisions. The share-vault implementation
+described below still has the legacy 48-hour queue and zero-exposure windows;
+it does not implement that release policy.
+
 This implements the [LP participation amendment](LP_INCENTIVES_PROPOSAL.txt) for new deployments. `LPVault` continues to hold underwriting USDC; `LPShareVault` issues proportional equity shares and handles asynchronous redemption. `LPIncentiveDistributor` provides a finite bootstrap campaign. No public deployment or phase activation is performed by this change. The endogenous-capital research model and results remain in [the tokenomics report](TOKENOMICS_IMPLEMENTATION.md#external-lp-participation-amendment).
 
 ## Equity and settlement windows
@@ -46,7 +57,7 @@ Accrued fees are liabilities excluded from share NAV immediately. They enter the
 The vault follows [ERC-7540 asynchronous redemption](https://eips.ethereum.org/EIPS/eip-7540) with synchronous [ERC-4626 entry](https://eips.ethereum.org/EIPS/eip-4626). It advertises ERC-165, ERC-7540 operators/redeem and ERC-7575; it does not advertise asynchronous deposits.
 
 1. `deposit(assets, receiver)` / `mint(shares, receiver)` issue equity at current valid NAV. Approve USDC to the share vault first.
-2. `requestRedeem(shares, controller, owner)` escrows shares in FIFO order. One active request per controller is allowed. Owners, their approved operators or share-allowance spenders can request. There is no cancellation. Pending shares continue bearing PnL and earn no bootstrap rewards.
+2. `requestRedeem(shares, controller, owner)` escrows shares in FIFO order. `activeRequest(owner)` tracks one active request per share owner; `controllerRequest(controller)` separately tracks the controller's claim, also limited to one active request. Both slots remain occupied until the full claim is paid. Owners, their approved operators or share-allowance spenders can request with the owner as controller. A different controller must be an approved operator of the owner, and must either submit the request itself or approve the requester as its operator. Approving someone as your operator does not let you occupy their controller slot without their consent. Requests must cover at least 1 USDC at current accounted NAV; `minRedeemShares()` returns this floor in shares, rounded up. Smaller balances must be topped up before requesting an exit. There is no cancellation. Pending shares continue bearing PnL and earn no bootstrap rewards.
 3. After at least 48 hours, anyone may `fulfillRedeem(requestId)` at a newer zero-exposure checkpoint whose signed `asOfTimestamp` is at or after the request's ready time. A valid liquidity window and a remaining 2C floor are required. Shares burn at **fulfillment NAV**, and USDC is segregated as a funded exit liability. FIFO head blocking can extend waits indefinitely; 48 hours is a minimum, not a payout promise.
 4. Controller or its approved operator calls `redeem` or `withdraw` to pull the claimable assets. Partial claims use cumulative rounding and cannot increase total entitlement. `LPVault.requestLPExit()` and `executeLPExit()` are full-balance compatibility helpers after share economics is enabled.
 
@@ -68,6 +79,17 @@ account reward = slot budget × eligible account capital-time / total capital-ti
 ```
 
 Zero demand gives zero budget; idle or protocol capital cannot mine the full schedule. Liability-time is dual-attested rather than independently proven onchain. Anyone may relay `claim(epoch, account)` after the slot ends plus 30 days, paying only that account, once. Vested escrow releases can occur before general FUSE transfer activation, but distributed tokens remain nontransferable until activation. Claims do not expire.
+
+The [release bootstrap candidate](RELEASE_LP_BOOTSTRAP.md) now adds a separate
+`configureBootstrapCampaign(start, utilizationBps)` entry point. It applies a
+capital-time taper of `clamp((3M - equity)/(3M - 250k), 0, 1)` to eligible
+account scores, with an untapered total-capital denominator. At/above $3M new
+score is zero; later lower equity can resume it only within the original
+90-day campaign. Existing claims survive the threshold, exit and pause. The
+legacy `configureCampaign` remains untapered, and configuration is still
+one-time across both paths. New defaults remain campaign-inactive. This does
+not replace the current exit queue or implement the proposed daily capital
+accounts; production reconciliation and independent external review are open.
 
 ## Backend and launch operations
 

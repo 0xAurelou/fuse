@@ -64,21 +64,26 @@ func run() error {
 	defer r.Close()
 	parent, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	ctx, cancel := context.WithDeadline(parent, r.Deadline())
-	defer cancel()
+	ctx, cancel := capture.WithWallDeadline(parent, r.Deadline())
+	defer cancel(nil)
 	failures := make(chan error, 1)
 	slog.Info("prospective capture started", "directory", *output, "duration", *duration, "resuming_sequence", r.Head().Sequence, "upstream_independent", false)
 	oracle.Collector{URL: *endpoint, Log: slog.Default(), Submit: func(_ context.Context, source string, raw json.RawMessage) error {
 		if !time.Now().Before(r.Deadline()) {
+			cancel(context.DeadlineExceeded)
 			return nil
 		}
 		err := r.Append(source, raw)
+		if errors.Is(err, capture.ErrDeadlineElapsed) {
+			cancel(context.DeadlineExceeded)
+			return nil
+		}
 		if err != nil {
 			select {
 			case failures <- err:
 			default:
 			}
-			cancel()
+			cancel(err)
 		}
 		return err
 	}}.Run(ctx)
@@ -91,5 +96,5 @@ func run() error {
 	if head.Sequence == 0 {
 		return fmt.Errorf("no receipts collected")
 	}
-	return json.NewEncoder(os.Stdout).Encode(map[string]any{"sequence": head.Sequence, "receipt_hash": head.Hash, "last_at_ms": head.At, "duration_elapsed": errors.Is(ctx.Err(), context.DeadlineExceeded), "production_approved": false})
+	return json.NewEncoder(os.Stdout).Encode(map[string]any{"sequence": head.Sequence, "receipt_hash": head.Hash, "last_at_ms": head.At, "duration_elapsed": errors.Is(context.Cause(ctx), context.DeadlineExceeded), "production_approved": false})
 }

@@ -14,6 +14,13 @@ type Store interface {
 	Append(context.Context, Event, State) error
 	Close(context.Context) error
 }
+
+// FinancialSourceFence is implemented by durable stores that can verify this
+// writer still owns the canonical journal head. Memory-only replay is not a
+// financial signing authority.
+type FinancialSourceFence interface {
+	AssertHead(context.Context, uint64, string) error
+}
 type Sequencer struct {
 	mu       sync.RWMutex
 	state    State
@@ -77,6 +84,28 @@ func (q *Sequencer) execute(ctx context.Context, c Command) (Event, error) {
 }
 func (q *Sequencer) Snapshot() State { q.mu.RLock(); defer q.mu.RUnlock(); return clone(q.state) }
 func (q *Sequencer) Ready() bool     { q.mu.RLock(); defer q.mu.RUnlock(); return !q.failed }
+
+// VerifyFinancialSource authenticates a replay prefix against the live journal
+// and its durable leadership fence before financial signatures are requested.
+func (q *Sequencer) VerifyFinancialSource(ctx context.Context, sequence uint64, journalHash, stateHash string) error {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+	if q.failed || sequence == 0 || sequence > uint64(len(q.events)) {
+		return errors.New("financial source is unavailable or not a canonical prefix")
+	}
+	e := q.events[sequence-1]
+	if e.Hash != journalHash || e.StateHash != stateHash {
+		return errors.New("financial replay is not the authoritative journal prefix")
+	}
+	fence, ok := q.store.(FinancialSourceFence)
+	if !ok {
+		return errors.New("financial signing requires a durable source fence")
+	}
+	if err := fence.AssertHead(ctx, q.state.Sequence, q.state.JournalHash); err != nil {
+		return fmt.Errorf("financial source fence unavailable: %w", err)
+	}
+	return nil
+}
 func (q *Sequencer) Events(after uint64, limit int) []Event {
 	q.mu.RLock()
 	defer q.mu.RUnlock()

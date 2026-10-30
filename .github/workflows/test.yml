@@ -57,10 +57,12 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: formal/requirements.txt
+          cache-dependency-path: |
+            formal/requirements.txt
+            scripts/requirements-research.txt
 
       - name: Install pinned verifier
-        run: python -m pip install -r formal/requirements.txt
+        run: python -m pip install -r formal/requirements.txt -r scripts/requirements-research.txt
 
       - name: Check proof formatting and result gate
         run: |

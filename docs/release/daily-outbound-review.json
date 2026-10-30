@@ -1,0 +1,59 @@
+{
+  "review_type": "internal_implementation_review",
+  "independent_external_review": false,
+  "production_approved": false,
+  "scope": "Durable cash batches, queued void obligations and completed custody refunds. No production worker or sender is installed.",
+  "executed_evidence": ".local/release-daily-bindings/20261030-v18/",
+  "checks": {
+    "intent_before_each_financial_signer": "Persisted before Authorize, with a payer-session/active-intent guard on each callback. Source authority remains required by Reader.",
+    "payer_nonce_and_unsigned_payload": "Persisted before controlled transaction signing; all EIP-1559 fields and recovered sender checked before raw persistence.",
+    "raw_before_broadcast": "Actual broadcaster callback reads and compares the committed PostgreSQL raw bytes.",
+    "crash_discovery": "Active lookup finds the planned intent after closing/reopening the owner session.",
+    "mined_revert": "Actual insufficient-gas transaction reverted; no financial proof was accepted; next intent used the next consumed nonce.",
+    "uncertain_send": "Actual pending broadcast with injected lost response; restart retained exact hash/raw/nonce without new financial signatures.",
+    "nonce_conflict": "Injected nonce-read conflict halted observation; no nonce or ticket claim was released.",
+    "rpc_failure": "Injected receipt outage remained an error; JSON null alone means receipt absence.",
+    "atomic_completion": "A PostgreSQL trigger rejected terminal persistence after proof/ticket inserts. Both proof and paid-ticket rows rolled back; included work remained discoverable and retried successfully.",
+    "payer_and_ticket_concurrency": "A second owner could not acquire the payer session. Another payer could not claim overlapping tickets.",
+    "retirement": "Unexpired and raw-prepared intents could not be abandoned; an expired never-prepared intent released the lane while retaining its audit row.",
+    "already_settled_retry": "Reconciled proof remained identical; no new broadcast callback.",
+    "void_receipts": "Separate queue and completion proofs verify actual transaction input, canonical events, original owner/stake, zero LP PnL and no pool/custody USDC movement. See daily-void-review.json.",
+    "replacement_and_cancellation": "All signed hashes remain tracked at one nonce. Explicit fee replacement preserves the financial call; confirmed intrinsic-gas cancellation releases only processing claims. The actual winner determines receipt proof. See daily-replacement-review.json.",
+    "external_recovery": "Signed raw/body, recovered sender, block membership/index and semantic proof are separate from nonce cleanup. Exact externally submitted adapter calls and reserved nonce consumers pass locally. See daily-external-review.json."
+  },
+  "observed_review_corrections": [
+    {
+      "issue": "Missing receipt versus RPC failure must remain distinguishable.",
+      "resolution": "ReadRPC permits null only for transaction-receipt lookup; tests retain errors for other null reads."
+    },
+    {
+      "issue": "The outbound owner session could die between financial signer callbacks.",
+      "resolution": "Each injected role call checks the same non-reconnecting outbound session and active intent."
+    }
+  ],
+  "assumptions": [
+    "PostgreSQL durability and honest authenticated RPC access are infrastructure requirements.",
+    "The payer is dedicated to the lane.",
+    "The injected transaction signer never broadcasts.",
+    "Confirmation depth and immutable receipt anchors are candidate policy, not validated public-chain finality.",
+    "Gas/fee inputs are explicit synthetic test settings, not approved production limits."
+  ],
+  "remaining": [
+    "approved production fee and recovery policy",
+    "unclassified/partial or changed-authority external executions",
+    "idle and multiple nonce gaps",
+    "live worker and admission/oracle ordering",
+    "native daily capital projection",
+    "target-chain gas/finality and scaling",
+    "independent external review"
+  ],
+  "final_source_sha256": {
+    "engine/internal/dailyrelay/outbox.go": "4372572d1ab6c77dcd21af5f05cc256597bce9f419795a94f6334d93350a4818",
+    "engine/internal/dailyrelay/outbox_test.go": "75a5c53f209bb2d70d53382aa74252574a43c58930bced47d10da9f5273f5926",
+    "engine/internal/dailyrelay/store.go": "4e0e382ddec8e2c459cd26e6d8db38564d77974fad910eb26e642eec084eaccd",
+    "engine/internal/contracts/rpc.go": "03283c39afa2ff389163beea4732f1876b52d10ffe8579ede358adec791bad8e",
+    "engine/internal/contracts/rpc_test.go": "d42e16917b84541e580db6eaa3893a3b988930eb7ed040d9f5eceb28309bf592",
+    "engine/internal/localdev/daily_outbox_e2e_test.go": "f2781ce2a9567aaa6b753d5162019454c979c81e80c2b998dd4f62abb523198d",
+    "engine/internal/localdev/daily_relay_e2e_test.go": "43bac9938bff20de72a24589b589dca74675e2f82894be54b5991a2b48c40ac0"
+  }
+}

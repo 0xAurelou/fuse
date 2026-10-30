@@ -1,0 +1,34 @@
+{
+  "status": "internally_resolved_candidate",
+  "independent_external_review": false,
+  "production_approved": false,
+  "finding": "Self-consistent replay did not establish authority to request financial signatures.",
+  "impact": "A recomputed alternative branch could pass replay integrity while retaining accepted quote terms. Signing services must authenticate the canonical source before financial authorization.",
+  "resolution": "NewReader remains keyless; NewSigningReader requires the live canonical sequencer. Replay prefix hashes must match its retained journal, and the PostgreSQL writer session must assert current leadership generation and head before each signing callback and after signing. Memory-only stores, unavailable source sessions and failed sequencers cannot authorize. Recorded void completion remains keyless.",
+  "executed_evidence": ".local/release-daily-bindings/20261030-v18/",
+  "checks": [
+    "real PostgreSQL source restart",
+    "disconnected old writer rejected before callback",
+    "keyless reader rejected before callback",
+    "consistent forged branch rejected before callback",
+    "recorded void completed keylessly after rotation",
+    "source unit test rejects memory authority, altered prefixes, leadership loss and commit-failed sequencer"
+  ],
+  "remaining": [
+    "approved production fee and recovery policy",
+    "unclassified/partial or changed-authority external executions",
+    "idle and multiple nonce gaps",
+    "live worker and admission/oracle ordering",
+    "native daily capital projection",
+    "target-chain gas/finality and scaling",
+    "independent external review"
+  ],
+  "final_source_sha256": {
+    "engine/internal/dailyrelay/reader.go": "e4469176852c5791ba0240682b463797bba94c2ae460b4d4a62db8811b4d3e4f",
+    "engine/internal/dailyrelay/plan.go": "4c26a326b40b141e1e163f3a8dbbad8a9fccd66b78e7849d10a11e146fed284c",
+    "engine/internal/engine/sequencer.go": "62c0162c0655fbd263e32674dc7cd5dfe82679436aca2485ec2a0b5f5d351f5c",
+    "engine/internal/storage/postgres.go": "1d25d1f7db46ad074972f0a2f6def60d2421dc98f45466a0bb53be8951577e55",
+    "engine/internal/engine/financial_source_test.go": "7d992844f8d2702179f6de1344e0c51e07cd1d05d12a1c751bbfd8399a4be2f4",
+    "engine/internal/localdev/daily_relay_e2e_test.go": "43bac9938bff20de72a24589b589dca74675e2f82894be54b5991a2b48c40ac0"
+  }
+}

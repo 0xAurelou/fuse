@@ -59,6 +59,9 @@ func (s State) Check() error {
 	if err := s.checkRecoveryState(); err != nil {
 		return err
 	}
+	if err := s.checkCapital(); err != nil {
+		return err
+	}
 	if s.Custody < 0 || s.Custody > Limit || s.LP < 0 || s.LP > Limit || s.Reserve < 0 || s.Reserve > Limit || s.LossClearing < 0 || s.LossClearing > Limit {
 		return fmt.Errorf("asset bound violated")
 	}
@@ -136,7 +139,7 @@ func (s State) capacity() error {
 			return reject("account exposure limit")
 		}
 	}
-	return nil
+	return s.capitalCapacity()
 }
 
 // Positive = debit; negative = credit. Reservations use a separate balanced memo

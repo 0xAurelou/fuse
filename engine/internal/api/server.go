@@ -381,6 +381,23 @@ func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
 	}
 	state := s.Q.Snapshot()
 	exposure, _, active := state.Exposure()
+	var capital strings.Builder
+	enabled := 0
+	if state.Policy.Capital != nil {
+		enabled = 1
+		fmt.Fprintf(&capital, "fuse_max_bet_liability_usdc_units %d\n", state.Policy.Capital.MaxBetLiability)
+		for _, asset := range state.Policy.Assets() {
+			amount, err := state.MarketExposure(asset)
+			if err != nil {
+				fail(w, 503, err)
+				return
+			}
+			fmt.Fprintf(&capital, "fuse_market_exposure_usdc_units{asset=%q} %d\nfuse_market_unfunded_wins_usdc_units{asset=%q} %d\nfuse_market_exposure_limit_usdc_units{asset=%q} %d\n",
+				asset, amount, asset, state.Capital.UnfundedByMarket[asset], asset, state.Policy.Capital.MaxMarketExposure[asset])
+		}
+	}
+	fmt.Fprintf(&capital, "fuse_capital_limits_enabled %d\nfuse_lp_available_usdc_units %d\nfuse_lp_admission_headroom_usdc_units %d\nfuse_global_exposure_limit_usdc_units %d\nfuse_account_exposure_limit_usdc_units %d\nfuse_lp_admission_buffer_usdc_units %d\n",
+		enabled, state.LPAvailable(), state.LPAvailable()-exposure-state.Policy.LPBuffer, state.Policy.MaxExposure, state.Policy.MaxAccountExposure, state.Policy.LPBuffer)
 	pending := 0
 	for _, p := range state.Stages {
 		if p.Status == "pending" {
@@ -389,6 +406,7 @@ func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 	fmt.Fprintf(w, "fuse_sequence %d\nfuse_lp_assets_usdc %d\nfuse_lp_reserved_usdc %d\nfuse_unfunded_claims_usdc %d\nfuse_active_stages %d\nfuse_pending_stages %d\nfuse_oracle_age_milliseconds %d\nfuse_reserve_usdc %d\n", state.Sequence, state.LP, exposure, state.Debt(), active, pending, s.now()-state.Oracle.At, state.Reserve)
+	fmt.Fprint(w, capital.String())
 	if r := state.Recovery; r != nil {
 		for _, mode := range []string{"open", "paused", "probe"} {
 			value := 0

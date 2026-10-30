@@ -1,0 +1,66 @@
+{
+  "review_type": "internal_implementation_review",
+  "independent_external_review": false,
+  "production_approved": false,
+  "executed_evidence": ".local/release-daily-bindings/20261030-v18/",
+  "scope": "Evidence-backed recovery of externally submitted exact adapter payloads and reserved payer nonce consumers; historical signer-generation metadata.",
+  "decisions": {
+    "chain_evidence": "Verify actual signed raw transaction/hash, recovered sender, nonce, chain, canonical block transaction index, receipt/log identities and confirmation depth. Reverify restored observations. Bounded explicit block scans do not release anything on absence.",
+    "nonce_consumption": "A transaction must consume exactly the reserved payer nonce, including a reserved-only crash. Matching calls still need semantic proof; unrelated/reverted execution cannot mark any bet paid or release accepted exposure. Only processing claims/nonce are advanced.",
+    "external_payment": "An exact planned batch/queue/completion call submitted by another sender requires full semantic proof. Proof and association commit atomically, but the payer nonce and processing lane remain held until separately proven consumed.",
+    "nonce_cleanup": "Cancellation or revert after proven external payment closes only the payer lane; its receipt remains distinct from the actual payment proof. The external proof is not charged/committed again.",
+    "source_authority": "New financial signing still requires the live fenced canonical writer. Read-only proof of an already executed signed contract call needs no live writer or signing key.",
+    "classification": "Unknown successful protocol calls, protocol-fund movements/approvals, malformed or unknown USDC effects remain unclassified and cannot be auto-released. Only the adapter exact signed payloads are adopted as matching.",
+    "historical_generation": "Queue receipts lack a typed digest marker. Asserted generation is checked against historical versions before/after the block and the complete ordered rotation sequence. Later same-block rotations do not alter the earlier direct custody call generation."
+  },
+  "resolved_finding": {
+    "id": "DAILY-QUEUE-GENERATION-001",
+    "severity": "low_metadata_integrity",
+    "issue": "Earlier queue verification could accept self-consistently changed asserted signer-generation/digest metadata while retaining actual calldata/signatures. Successful immutable contract execution still bound the real owner, outcome and stake; no different payout was demonstrated.",
+    "resolution": "Derive the actual transaction generation using pre/post-block versions and ordered rotation events, then compare it to the asserted generation.",
+    "evidence": [
+      "actual queue proof with self-consistent false generation rejected",
+      "unit before/after rotation trace derives transaction generation",
+      "unit missing/duplicate/removed/wrong-block or same-transaction rotations rejected"
+    ],
+    "status": "resolved_in_candidate"
+  },
+  "executed_checks": [
+    "actual unrelated nonce consumer after a reservation-only crash found by bounded block scan",
+    "unconfirmed/wrong historical nonce/wrong block index/altered raw payload rejected",
+    "nonce audit terminal-write failure retained active lane and claims",
+    "unrelated consumption left accepted exposure and paid-ticket count unchanged",
+    "another relayer executed an actual zero-net batch of two native outcomes",
+    "different relayer cannot be adopted as our nonce consumer",
+    "external association failure rolled back payment proof",
+    "external proof recorded while owned nonce remained active; resend/replacement rejected",
+    "separate cancellation closed owned nonce without recharging the externally proven payment",
+    "actual independently submitted matching refund adopted at its reserved nonce through writer disconnection/pause/rotation",
+    "five actual accepted native stages retain 2 USDC aggregate profit and 0.1 USDC daily fee",
+    "existing own-send replacement/cancellation/original-win/void and atomic-proof recovery retained",
+    "terminal nonce and external-payment adoption retries reverify original evidence without rewriting after payer lane closes"
+  ],
+  "limitations": [
+    "exact adapter authorization/calldata only; changed authorizations, partial batches, single non-adapter resolve calls and governance multicalls require incident handling",
+    "idle or multiple nonce gaps do not support blind reset/automatic skipping",
+    "128 blocks per explicit discovery window is a candidate operational guard",
+    "unprotected legacy transactions and unclassified protocol effects are not automatically adopted",
+    "honest authenticated canonical RPC and durable PostgreSQL remain infrastructure assumptions",
+    "target-chain fee/finality/scaling, live worker/ingress/capital projection and independent review remain open"
+  ],
+  "final_source_sha256": {
+    "engine/internal/dailyrelay/external.go": "2256a3095a561eefb2cca39807e36020ce43e56652035c3acecc892d3571f849",
+    "engine/internal/dailyrelay/external_test.go": "745ddf68c5806ad79ded06c49a81e098058b77163da71c1ff8ff7a851695b78c",
+    "engine/internal/dailyrelay/historical_generation.go": "737cf9736edac50dd7fe7feb638cfbf82cd8e7bcec1d6ad9bd9b29b91f390c3a",
+    "engine/internal/dailyrelay/outbox.go": "4372572d1ab6c77dcd21af5f05cc256597bce9f419795a94f6334d93350a4818",
+    "engine/internal/dailyrelay/replacement.go": "f3b044b5bd532a34397d7f617a10cdca3c5abcd335260072ce0038e91731363d",
+    "engine/internal/dailyrelay/reader.go": "e4469176852c5791ba0240682b463797bba94c2ae460b4d4a62db8811b4d3e4f",
+    "engine/internal/dailyrelay/void.go": "520af223069235de26fea8a672edce760a2d8f65289569fba4d778762abd1573",
+    "engine/internal/contracts/rpc.go": "03283c39afa2ff389163beea4732f1876b52d10ffe8579ede358adec791bad8e",
+    "engine/internal/localdev/daily_external_e2e_test.go": "fc91a8d5fbd05f449a4c0c6846641d29327faeed2073b289f09863001a09d087",
+    "engine/internal/localdev/daily_outbox_e2e_test.go": "f2781ce2a9567aaa6b753d5162019454c979c81e80c2b998dd4f62abb523198d",
+    "engine/internal/localdev/daily_replacement_e2e_test.go": "4368f58b9f16be317d753a34f69c4ef0fd117434b67b5ad54f441cebdb9021c4",
+    "engine/internal/localdev/daily_relay_e2e_test.go": "43bac9938bff20de72a24589b589dca74675e2f82894be54b5991a2b48c40ac0",
+    "engine/internal/localdev/daily_void_e2e_test.go": "71752e1553123b92d0f03a90141a89ab6673c5760685b21fd055222e18122eb8"
+  }
+}

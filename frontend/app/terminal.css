@@ -28,6 +28,7 @@ body{font-family:var(--font)}
 .desk-toolbar{height:59px;display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid #2b2c32}
 .desk-tabs{display:flex;gap:20px;align-items:center}.desk-tab{font-size:12px;font-weight:700;letter-spacing:.4px;color:#e5e4df}
 .desk-tab.selected{border-bottom:2px solid #fa505b;height:59px;display:inline-flex;align-items:center}.desk-contract{font-size:10px;color:#777a82}
+.market-picker{position:relative}.market-picker select{appearance:none;border:0;border-radius:3px;background:#101113;color:inherit;font:inherit;letter-spacing:inherit;min-height:36px;padding:8px 25px 8px 8px;cursor:pointer;color-scheme:dark}.market-picker>svg{position:absolute;right:6px;pointer-events:none;color:#999ba3}.market-picker select:hover{background:#222328}.market-picker select:focus-visible{outline:2px solid #fa505b;outline-offset:2px}
 .desk-status{display:flex;gap:8px;align-items:center;font-size:9px;color:#777a82}.desk-status>span:first-child{font-family:monospace;font-size:9px;color:#c9c8c2;border:1px solid #46464c;padding:3px 5px;border-radius:2px}
 .desk-status .demo-label{border-color:#675134!important;color:#d0ad70!important}
 .degen-summary{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #2c2d33;font-size:10px}

@@ -63,6 +63,15 @@ func (c *Controller) TokenomicsView(ctx context.Context) (map[string]any, error)
 		}
 		flags[item.method] = out[0].(bool)
 	}
+	// Only new, capability-declaring deployments preserve redemption admission
+	// through a betting pause. Do not relabel legacy immutable contracts.
+	if _, supported := c.Env.ABIs["RedemptionReserve"].Methods["supportsPausedRedemptions"]; supported {
+		out, e := c.Env.Read(ctx, "RedemptionReserve", "supportsPausedRedemptions", block)
+		if e != nil {
+			return nil, e
+		}
+		flags["redemptionsDuringTradingPause"] = out[0].(bool)
+	}
 	emission := map[string]string{}
 	for _, method := range []string{"totalAllocated", "totalClaimed", "nextEpochCap", "emissionStart", "epochDuration", "decayBps"} {
 		v, e := read("RewardDistributor", method)
@@ -153,13 +162,16 @@ func (c *Controller) TokenomicsView(ctx context.Context) (map[string]any, error)
 		}
 		start, end := values[1].(uint64), values[2].(uint64)
 		ready := values[4].(*big.Int).Sign() > 0
-		executable := ready && uint64(header.Time) >= start && uint64(header.Time) < end && flags["redemptionsActive"] && !s.Paused
+		pausePermits := !s.Paused || flags["redemptionsDuringTradingPause"]
+		inWindow := uint64(header.Time) >= start && uint64(header.Time) < end
+		executable := ready && inWindow && flags["redemptionsActive"] && flags["transfersEnabled"] && pausePermits
 		if executable {
 			numerator := new(big.Int).Mul(values[5].(*big.Int), big.NewInt(int64(10000-values[3].(uint16))))
 			denominator := new(big.Int).Mul(values[4].(*big.Int), big.NewInt(10000))
 			netQuote = map[string]string{"usdc_units": numerator.String(), "fuse_units": denominator.String()}
 		}
-		epoch = map[string]any{"executable": executable, "id": latest.String(), "start": values[1], "end": values[2], "penalty_bps": values[3], "supply_snapshot": values[4].(*big.Int).String(), "reserve_snapshot_usdc_units": values[5].(*big.Int).String(), "snapshot_available": values[4].(*big.Int).Sign() > 0}
+		canStart := !ready && inWindow && flags["redemptionsActive"] && flags["transfersEnabled"] && pausePermits && free > 0 && supply.Sign() > 0
+		epoch = map[string]any{"executable": executable, "start_required": canStart, "id": latest.String(), "start": values[1], "end": values[2], "penalty_bps": values[3], "supply_snapshot": values[4].(*big.Int).String(), "reserve_snapshot_usdc_units": values[5].(*big.Int).String(), "snapshot_available": values[4].(*big.Int).Sign() > 0}
 	}
 	lpParticipation, err := c.lpView(ctx, block)
 	if err != nil {

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "date": "2026-10-30",
+  "method": "Internal Go implementation review and reproduced regression; not external review",
+  "independent_external_review": false,
+  "production_approved": false,
+  "legacy_policies_changed": false,
+  "scope": [
+    "engine/internal/engine/capital.go",
+    "engine/internal/engine/types.go",
+    "engine/internal/engine/accounting.go",
+    "engine/internal/engine/reducer.go",
+    "engine/internal/engine/oracle.go",
+    "engine/internal/engine/capital_test.go",
+    "engine/internal/engine/capital_invariants_test.go",
+    "engine/internal/api/server.go",
+    "engine/internal/api/capital_metrics_test.go"
+  ],
+  "source_sha256": {
+    "engine/internal/engine/capital.go": "d1693e86a4e289145772709948fbb18080263070e51919b0c78883a68de26f2f",
+    "engine/internal/engine/types.go": "9936dbb069b5db92ddfcbfa21326293615990cc5283963799562cca2bb8dbe3f",
+    "engine/internal/engine/accounting.go": "8dfa2594a20bd40602e7fe85a8db9de152f704e55abb65dbd0f83a9f29a168bb",
+    "engine/internal/engine/reducer.go": "3f3b51f38293ef5e94125be209c5f6d8cbcf85d5ef7f42d6ac7df745f4fd65ee",
+    "engine/internal/engine/oracle.go": "7a5a093ebe9771813b7778dbabd832a637e6645534a0892e228f4dbad0c3573e",
+    "engine/internal/engine/capital_test.go": "f1fb3ac1ed56d5c3c6224196a5a221a6601f5529db668d9571bc891bc3fdcacd",
+    "engine/internal/engine/capital_invariants_test.go": "1de9b64ea5d54c47cc83fbca8fb38007811dee8fdb444e4792944d985a7aea9b",
+    "engine/internal/api/server.go": "837adf22ca88f5e647112b604eaaed5888ae83c45c8bc03c93f38be0a8780e0e",
+    "engine/internal/api/capital_metrics_test.go": "450f1d5cd3780500cb44f07c1abc6e5aba8b62edd84b95c75b968b071fb17fe2"
+  },
+  "findings": [
+    {
+      "id": "CAP-BUFFER-001",
+      "severity": "medium",
+      "title": "Admission-buffer increase can strand already accepted winning claims",
+      "precondition": "Authorized policy update increases LPBuffer beyond physical LP headroom after accepted open and recognized obligations",
+      "reproduced": true,
+      "before_fix_result": "Policy update accepted; winner settlement rejected: post-settlement capital buffer insufficient",
+      "reproduction_test": "TestCapitalBufferUpdateCannotStrandExistingWinningClaims",
+      "before_fix_log": "buffer-regression-before.log in native-limits-v2 verification packet",
+      "fix": "For the opt-in funded capital rule, reject a buffer increase exceeding LPAvailable minus total current exposure, before committing the policy update.",
+      "status": "resolved_for_opt_in_candidate",
+      "regression": "Reject one atomic unit above the safe boundary; accept the exact boundary; settle and pay existing claims while betting is paused; reject new risk without buffer headroom."
+    }
+  ],
+  "limits": [
+    "Legacy policies omitting Capital retain historical behavior; this is not a claim that every historical deployment is repaired.",
+    "Independent contract/pricing reviews, calibrated risk limits and deployed permissions remain unverified.",
+    "Existing LP capital-moving contracts, daily lot ownership and free withdrawals still require reconciliation."
+  ]
+}

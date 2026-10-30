@@ -1,5 +1,12 @@
 # Recalibrated eight-hour prospective run — round 2
 
+**Completed:** 49,413 chain-verified receipts, 825/960 healthy windows (85.94%
+coverage), and 506/825 survival (61.33%). The candidate missed the survival band
+and the run missed its coverage requirement. The subsequent
+[capture-gap and corridor investigation](CAPTURE_INVESTIGATION_20261027.md)
+found host sleep/network disruption and large regime-dependent differences.
+The setup below is retained as history; no new candidate has been chosen.
+
 Status at setup: collecting observations. Start: **26 October 2026, 17:11:54
 WITA (UTC+8)**. Fixed deadline: **27 October 2026, 01:11:54 WITA**.
 

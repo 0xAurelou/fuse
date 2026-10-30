@@ -1,0 +1,54 @@
+{
+  "version": 3,
+  "status": "planning_targets_unverified",
+  "currency": "USD",
+  "protocol_fee_bps": 500,
+  "fee_frequency": "daily",
+  "cost_order": "Operations spends from its separate cash after protocol fee receipt; costs do not reduce the betting fee base.",
+  "owner": null,
+  "distribution_intent": "Worldwide, as requested by the user on 2026-10-30; no regional approvals or specific distribution channels evidenced.",
+  "launch_jurisdictions": [],
+  "distribution_approvals": [],
+  "funding": {
+    "lp_underwriting": {
+      "candidate_usdc": "250000",
+      "target_basis": "User-selected launch funding target, 2026-10-30",
+      "verified_usdc": null,
+      "evidence": []
+    },
+    "segregated_fuse_backing": {
+      "candidate_usdc": "125000",
+      "target_basis": "User-selected launch funding target, 2026-10-30",
+      "verified_usdc": null,
+      "evidence": []
+    }
+  },
+  "lp_bootstrap": {
+    "status": "contract_candidate_not_activated",
+    "activation_method": "LPIncentiveDistributor.configureBootstrapCampaign; legacy configureCampaign is untapered",
+    "production_capital_account_and_withdrawal_reconciled": false,
+    "user_requirement": "Bootstrap incentives while aggregate pool LP equity is below 3M USDC",
+    "pool_threshold_usdc": "3000000",
+    "additional_lp_equity_from_seed_to_threshold_usdc": "2750000",
+    "source": "Existing fixed-supply 50M FUSE LP escrow allocation; no new mint or diversion of LP cash, backing or operating funds",
+    "maximum_fuse": "50000000",
+    "escrow_balance_verified": false,
+    "campaign_days": 90,
+    "vesting_days": 30,
+    "proposed_full_rate_pool_equity_usdc": "250000",
+    "proposed_target_utilization_bps": 2000,
+    "initial_backing_equivalent_upper_bound_usdc": "6250",
+    "initial_backing_equivalent_assumptions": "125k backing / 1B outstanding supply, no added funding or haircut; not cash income, token market value, guaranteed APY or additional backing required",
+    "approval": null
+  },
+  "approved_by": null,
+  "approval_timestamp": null,
+  "notes": [
+    "The 250k LP and 125k backing amounts are user-selected funding targets, not verified funds.",
+    "Worldwide distribution is intent only. Launch-region review and distribution arrangements remain unverified; an empty approvals list is not worldwide authorization.",
+    "Daily fees depend on actual PnL, loss recovery and capital; a quoted edge is not revenue.",
+    "Fee income can be zero even at positive quoted edge. Welcome/continuity allowances are subsets of backing, not operating cash."
+  ],
+  "operations_reporting": "Operations cash amounts and monthly spending limits omitted at the user's request on 2026-10-30; this does not verify funding readiness.",
+  "funding_verification_complete": false
+}

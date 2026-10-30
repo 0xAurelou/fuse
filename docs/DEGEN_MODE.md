@@ -19,6 +19,16 @@ These are three independent entries, not a combined/parlay contract. A user can 
 
 All assets use the formula in [Barrier pricing](BARRIER_PRICING.md). Each uses its own entry price and volatility assumption. Shipped paper/local models assume 30-second relative volatility of BTC **0.10%**, ETH **0.15%**, HYPE **0.30%**, with a **5% target edge**. These are uncalibrated research inputs, not measured probabilities. Each asset needs its own prospective oracle validation, including correlated aggregate LP losses.
 
+The [independent ETH/HYPE fitting study](ETH_HYPE_CORRIDOR_RESEARCH.md) retains separate offline raw-oracle models and payout-specific historical evaluations. Those research fits do not replace these shipped assumptions or establish live pricing or net LP profitability.
+
+The [payout-aware flat-risk follow-up](PAYOUT_FLAT_RISK_RESEARCH.md) models pre-entry zero-motion and minimum-width survival risk for 100×/1,000× quotes. It retains the complete calibration/quote-availability comparisons; no tested rule is promoted to live pricing.
+
+The [calibrated-risk and empirical-tail iteration](PAYOUT_EMPIRICAL_RESEARCH.md) adds earlier out-of-fold probability calibration, exact movement CDFs and an explicit validation-only eligibility screen. Calibration retains more 1,000× quotes, but no candidate qualifies under the research screens.
+
+The [expanding chronological payout study](PAYOUT_WALKFORWARD_RESEARCH.md) refits each asset on earlier dates and scores 18 ETH dates and 16 HYPE dates once per fixed variant. It compares timing and calendar features, preserves oracle-floor and evidence budgets, and rejects every variant under the necessary development screens.
+
+The [historical liquidity-effect study](HISTORICAL_LIQUIDITY_EFFECT_RESEARCH.md) joins native ETH/HYPE spread and visible-depth history to the archived oracle paths. Its paired chronological models test zero-motion prediction beyond oracle activity and calendar features; it does not promote payout pricing or establish liquidity causality. The [fresh consecutive recorder](LIQUIDITY_CAPTURE.md) runs separately.
+
 ## Preview and local development
 
 Without `FUSE_ENGINE_URL`, the app explicitly shows demo traces and independent presentation timers; it moves no funds and invents no wins. With an enabled engine, missing or unhealthy assets remain unavailable rather than borrowing another asset's feed. An older BTC-only gateway can continue serving the default desk.

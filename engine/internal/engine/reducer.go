@@ -114,6 +114,22 @@ func (s *State) execute(c Command) (any, error) {
 		if err := p.Validate(); err != nil {
 			return nil, reject(err.Error())
 		}
+		if p.Capital != nil && p.LPBuffer > s.Policy.LPBuffer {
+			exposure, _, _ := s.Exposure()
+			if p.LPBuffer > s.LPAvailable()-exposure {
+				return nil, reject("buffer increase would strand existing obligations")
+			}
+		}
+		if s.Policy.Capital != nil && p.Capital == nil {
+			return nil, reject("funded capital policy cannot be disabled")
+		}
+		if s.Policy.Capital == nil && p.Capital != nil {
+			exposure, _, _ := s.Exposure()
+			if exposure != 0 || s.LossClearing != 0 {
+				return nil, reject("capital activation requires reconciled zero exposure")
+			}
+			s.Capital = &CapitalState{UnfundedByMarket: map[string]int64{}}
+		}
 		if _, exists := s.PolicyHistory[p.Version]; exists {
 			return nil, reject("policy version already exists")
 		}
@@ -123,6 +139,9 @@ func (s *State) execute(c Command) (any, error) {
 				return nil, reject("changed market pricing requires a new model version")
 			}
 			if !enabled {
+				if s.Capital != nil && s.Capital.UnfundedByMarket[asset] > 0 {
+					return nil, reject("cannot disable market with unpaid winnings")
+				}
 				for _, stage := range s.Stages {
 					if stage.Terms.Asset == asset && (stage.Status == "active" || stage.Status == "pending") {
 						return nil, reject("cannot disable a market with open stages")
@@ -214,6 +233,9 @@ func (s *State) execute(c Command) (any, error) {
 		}
 		if q.Payout-funded > q.MaxLPLiability {
 			return nil, reject("quote funding composition changed")
+		}
+		if err := s.capitalAdmission(q.Asset, q.Stake, funded, q.Payout-funded); err != nil {
+			return nil, err
 		}
 		id := fmt.Sprintf("stage-%d", s.Sequence)
 		p := &Stage{AcceptedSequence: s.Sequence, ID: id, Terms: q, Start: c.At, Expiry: c.At + q.DurationMS, Status: "active", Funded: funded, Debt: debt}
@@ -326,6 +348,9 @@ func (s *State) quote(c Command) (any, error) {
 		if err == nil {
 			delta, err = MulDiv(oracle.Price, widthPPB, 1_000_000_000)
 		}
+	} else if single && len(m.MultiplierWidthsPPB) > 0 {
+		widthPPB = m.MultiplierWidthsPPB[c.Multiplier]
+		delta, err = MulDiv(oracle.Price, widthPPB, 1_000_000_000)
 	} else if single {
 		delta, err = MulDiv(oracle.Price, m.MultiplierWidthsPPM[c.Multiplier], 1_000_000)
 	} else if m.BaseWidthPPM > 0 {
@@ -366,6 +391,9 @@ func (s *State) quote(c Command) (any, error) {
 		replace = stake - funded
 	}
 	liability := payout - funded
+	if err := s.capitalAdmission(asset, stake, funded, liability); err != nil {
+		return nil, err
+	}
 	if single && byAccount[c.Actor]-replace+liability > s.Policy.MaxAccountExposure {
 		return nil, reject("account exposure limit")
 	}
@@ -381,6 +409,8 @@ func (s *State) quote(c Command) (any, error) {
 		if m.DNT != nil {
 			q.PricingRule, q.VolatilityPPM, q.HouseEdgeBPS, q.WidthPPB = m.DNT.Rule, m.DNT.VolatilityPPM, m.DNT.HouseEdgeBPS, widthPPB
 			q.TargetSurvivalPPB, _ = MulDiv(10_000-m.DNT.HouseEdgeBPS, 100_000, c.Multiplier)
+		} else if len(m.MultiplierWidthsPPB) > 0 {
+			q.PricingRule, q.WidthPPB = FixedWidthPPB, widthPPB
 		}
 	}
 	// Quotes are short lived; pruning is deterministic and does not change accepted terms.
@@ -417,6 +447,12 @@ func (s *State) fundSettlement() error {
 		if p.Status == "active" || p.Status == "pending" {
 			p.Funded += p.Debt
 			p.Debt = 0
+		}
+	}
+	if s.Capital != nil {
+		s.Capital.UnfundedByMarket = map[string]int64{}
+		for _, stage := range s.Stages {
+			s.Capital.FundedThroughSequence = max(s.Capital.FundedThroughSequence, stage.ResolvedSequence)
 		}
 	}
 	if err := s.Check(); err != nil {

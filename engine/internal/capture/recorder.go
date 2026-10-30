@@ -5,6 +5,7 @@ package capture
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,6 +16,10 @@ import (
 
 	"fuse/engine/internal/engine"
 )
+
+// ErrDeadlineElapsed is a normal fixed-horizon stop, including when the clock
+// crosses the deadline between the caller's check and the serialized append.
+var ErrDeadlineElapsed = errors.New("capture deadline elapsed")
 
 type Manifest struct {
 	DurationMS         int64         `json:"duration_ms"`
@@ -169,6 +174,9 @@ func (r *Recorder) Append(source string, raw json.RawMessage) error {
 		return fmt.Errorf("oracle frame exceeds 1 MiB")
 	}
 	v := Receipt{Sequence: r.head.Sequence + 1, Previous: r.head.Hash, At: r.now().UnixMilli(), Source: source, Raw: append(json.RawMessage{}, raw...)}
+	if v.At >= r.Deadline().UnixMilli() {
+		return ErrDeadlineElapsed
+	}
 	v.Hash = v.digest()
 	if err := r.validate(v); err != nil {
 		return err

@@ -32,7 +32,44 @@ const CharacterCanvas = memo(function CharacterCanvas({ options }: { options: Ch
 
 export const CharacterStage = memo(function CharacterStage({ reaction }: { reaction: AvatarReaction | null }) {
   const [paused, setPaused] = useState(false), [hidden, setHidden] = useState(false), [credits, setCredits] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number; grabDX: number; grabDY: number; width: number; height: number } | null>(null);
   const [activeReaction, setActiveReaction] = useState<AvatarReaction['kind'] | null>(null);
+  // Drag the companion by its toolbar: buttons keep their clicks, the bar
+  // background and label move the whole overlay. Positioning is transform-
+  // based and re-anchored from the live bounding box, so it works no matter
+  // where the layout parks the companion (fixed overlay or in-flow panel);
+  // the box is clamped to stay fully inside the viewport.
+  function dragMove(event: PointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    const desiredX = event.clientX - d.grabDX;
+    const desiredY = event.clientY - d.grabDY;
+    const x = Math.max(-d.baseX, Math.min(window.innerWidth - d.baseX - d.width, desiredX - d.baseX));
+    const y = Math.max(-d.baseY, Math.min(window.innerHeight - d.baseY - d.height, desiredY - d.baseY));
+    setPos({ x, y });
+  }
+  function dragEnd() {
+    drag.current = null;
+    document.body.style.cursor = '';
+    window.removeEventListener('pointermove', dragMove);
+  }
+  function onToolbarPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if ((event.target as HTMLElement).closest('button')) return;
+    const aside = event.currentTarget.parentElement!;
+    const rect = aside.getBoundingClientRect();
+    const current = pos ?? { x: 0, y: 0 };
+    drag.current = {
+      startX: event.clientX, startY: event.clientY,
+      baseX: rect.left - current.x, baseY: rect.top - current.y,
+      grabDX: event.clientX - rect.left, grabDY: event.clientY - rect.top,
+      width: rect.width, height: rect.height,
+    };
+    document.body.style.cursor = 'grabbing';
+    window.addEventListener('pointermove', dragMove);
+    window.addEventListener('pointerup', dragEnd, { once: true });
+  }
+  useEffect(() => () => { window.removeEventListener('pointermove', dragMove); }, []);
   useEffect(() => {
     const remaining = reaction ? reaction.at + REACTION_SECONDS[reaction.kind] * 1000 - Date.now() : 0;
     if (!reaction || remaining <= 0) { setActiveReaction(null); return; }
@@ -43,9 +80,9 @@ export const CharacterStage = memo(function CharacterStage({ reaction }: { react
   const stopped = paused;
   const caption = stopped ? 'PAUSED' : activeReaction === 'win' ? 'STAGE WON' : activeReaction === 'loss' ? 'KISS IT GOODBYE' : 'CLASSIC DANCE';
   if (hidden) return <button className="vtuber-restore" onClick={() => setHidden(false)} aria-label="Show VTuber avatar"><Icon name="users" size={14}/><span>VTUBER</span></button>;
-  return <aside className="vtuber-companion" aria-label="3D VTuber companion" data-reaction={stopped ? 'paused' : activeReaction || 'idle'}>
+  return <aside className="vtuber-companion" aria-label="3D VTuber companion" data-reaction={stopped ? 'paused' : activeReaction || 'idle'} style={pos ? { transform: `translate(${pos.x}px, ${pos.y}px)`, zIndex: 40 } : undefined}>
     <CharacterCanvas options={{ playing: !stopped, reaction }}/>
-    <div className="vtuber-toolbar">
+    <div className="vtuber-toolbar" onPointerDown={onToolbarPointerDown}>
       <span className="vtuber-label" aria-live="polite"><i/>{caption}</span>
       <button aria-label={paused ? 'Resume the dance' : 'Pause the dance'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{stopped ? '▶' : 'Ⅱ'}</button>
       <button aria-label="Avatar credits" aria-expanded={credits} onClick={() => setCredits(value => !value)}><Icon name="info" size={12}/></button>

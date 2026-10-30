@@ -71,7 +71,9 @@ func (r *RPCReader) call(ctx context.Context, method string, params any, out any
 	if envelope.Error != nil {
 		return fmt.Errorf("RPC %s error %d: %s", method, envelope.Error.Code, envelope.Error.Message)
 	}
-	if string(envelope.Result) == "null" || len(envelope.Result) == 0 {
+	// A missing transaction receipt is a normal pending state. Keep it distinct
+	// from transport/RPC failure so recovery never mistakes an outage for absence.
+	if len(envelope.Result) == 0 || (string(envelope.Result) == "null" && method != "eth_getTransactionReceipt") {
 		return fmt.Errorf("RPC result unavailable")
 	}
 	return json.Unmarshal(envelope.Result, out)
@@ -126,7 +128,7 @@ func (r *RPCReader) Code(ctx context.Context, address common.Address) ([]byte, e
 // in an explicitly guarded deployment adapter, never in the paper server.
 func (r *RPCReader) ReadRPC(ctx context.Context, method string, params any, out any) error {
 	switch method {
-	case "eth_call", "eth_chainId", "eth_blockNumber", "eth_getTransactionReceipt", "eth_getTransactionCount", "eth_gasPrice", "eth_estimateGas", "eth_getBlockByNumber", "eth_getCode", "web3_clientVersion":
+	case "eth_call", "eth_chainId", "eth_blockNumber", "eth_getTransactionReceipt", "eth_getTransactionByHash", "eth_getTransactionCount", "eth_getLogs", "eth_gasPrice", "eth_estimateGas", "eth_getBlockByNumber", "eth_getCode", "web3_clientVersion":
 		return r.call(ctx, method, params, out)
 	default:
 		return fmt.Errorf("not a read RPC: %s", method)

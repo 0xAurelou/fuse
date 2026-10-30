@@ -38,6 +38,8 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
     uint256 public constant BUDGET = 50_000_000 ether;
     uint64 public constant CAMPAIGN_DAYS = 90;
     uint256 public constant VESTING = 30 days;
+    uint256 public constant BOOTSTRAP_FULL_RATE_ASSETS = 250_000e6;
+    uint256 public constant BOOTSTRAP_STOP_ASSETS = 3_000_000e6;
     uint256 private constant SCALE = 1e27;
     LPShareVault public immutable vault;
     FUSEToken public immutable token;
@@ -47,6 +49,7 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
     uint64 public lastUpdate;
     uint64 public latestEpoch;
     uint16 public targetUtilizationBps;
+    bool public bootstrapCampaign;
     uint256 public cumulativeIndex;
     uint256 public totalClaimed;
     uint256 public totalPublishedBudget;
@@ -60,6 +63,7 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
     error InvalidEpoch();
     error InvalidClaim();
     event CampaignConfigured(uint64 start, uint64 end, uint16 targetUtilizationBps);
+    event BootstrapPolicyConfigured(uint256 fullRateAssets, uint256 stopAssets);
     event LPRewardsPublished(
         uint64 indexed epoch, uint256 capitalSeconds, uint256 liabilitySeconds, uint256 budget, bytes32 journalHash
     );
@@ -75,6 +79,17 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
     }
 
     function configureCampaign(uint64 start_, uint16 utilizationBps) external onlyGovernance {
+        _configureCampaign(start_, utilizationBps, false);
+    }
+
+    /// @notice Single finite below-$3M campaign; vesting never locks LP capital.
+    /// @dev The legacy entry point remains untapered for historical deployments
+    /// and model compatibility. A release using this policy must select this path.
+    function configureBootstrapCampaign(uint64 start_, uint16 utilizationBps) external onlyGovernance {
+        _configureCampaign(start_, utilizationBps, true);
+    }
+
+    function _configureCampaign(uint64 start_, uint16 utilizationBps, bool bootstrap) private {
         if (
             start != 0 || start_ < block.timestamp || start_ == 0 || utilizationBps == 0 || utilizationBps > 10_000
                 || escrow.distributor() != address(this) || address(vault.incentives()) != address(this)
@@ -83,7 +98,27 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
         end = start_ + CAMPAIGN_DAYS * 1 days;
         lastUpdate = start_;
         targetUtilizationBps = utilizationBps;
+        bootstrapCampaign = bootstrap;
         emit CampaignConfigured(start, end, utilizationBps);
+        if (bootstrap) emit BootstrapPolicyConfigured(BOOTSTRAP_FULL_RATE_ASSETS, BOOTSTRAP_STOP_ASSETS);
+    }
+
+    /// @notice Current taper in 1e27 units, for disclosure. Past scores use
+    /// checkpointed equity, so deposits cannot reprice earlier capital-time.
+    function bootstrapFactor() external view returns (uint256) {
+        uint256 assets = vault.totalAssets();
+        if (!bootstrapCampaign || assets <= BOOTSTRAP_FULL_RATE_ASSETS) return SCALE;
+        if (assets >= BOOTSTRAP_STOP_ASSETS) return 0;
+        return Math.mulDiv(BOOTSTRAP_STOP_ASSETS - assets, SCALE, BOOTSTRAP_STOP_ASSETS - BOOTSTRAP_FULL_RATE_ASSETS);
+    }
+
+    function _scoreRate(uint256 assets, uint256 supply) private view returns (uint256) {
+        if (bootstrapCampaign && assets >= BOOTSTRAP_STOP_ASSETS) return 0;
+        uint256 rate = Math.mulDiv(assets, SCALE, supply);
+        if (!bootstrapCampaign || assets <= BOOTSTRAP_FULL_RATE_ASSETS) return rate;
+        // Two downward mulDiv operations avoid an overflowing supply * range
+        // denominator. Rounding can reduce a score, never enlarge its subsidy.
+        return Math.mulDiv(rate, BOOTSTRAP_STOP_ASSETS - assets, BOOTSTRAP_STOP_ASSETS - BOOTSTRAP_FULL_RATE_ASSETS);
     }
 
     /// @dev Sum of daily caps is exactly BUDGET. Slots decay linearly to expiry; unused rewards stay escrowed.
@@ -108,7 +143,7 @@ contract LPIncentiveDistributor is Module, EIP712, ReentrancyGuard {
             uint64 until = uint64(Math.min(stop, boundary));
             uint256 duration = until - time;
             capitalSeconds[epoch] += assets * duration;
-            if (supply != 0) cumulativeIndex += Math.mulDiv(assets, SCALE, supply) * duration;
+            if (supply != 0) cumulativeIndex += _scoreRate(assets, supply) * duration;
             if (until == boundary) indexAtEnd[epoch] = cumulativeIndex;
             time = until;
         }

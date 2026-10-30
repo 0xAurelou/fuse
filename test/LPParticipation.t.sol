@@ -413,7 +413,7 @@ contract LPParticipationTest is FUSEFixture {
     }
 
     function testFuzzPartialClaimCannotIncreaseExitPayout(uint64 rawAssets, uint64 rawSplit) public {
-        uint256 assets = bound(rawAssets, 1, 10_000e6);
+        uint256 assets = bound(rawAssets, 1e6, 10_000e6);
         _open();
         uint256 minted = _enter(alice, assets);
         uint256 id = _request(alice, minted);

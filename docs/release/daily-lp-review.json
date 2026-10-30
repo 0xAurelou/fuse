@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "scope": ["src/DailyLPVault.sol", "src/DailyBetCustody.sol"],
+  "review_type": "internal_AI_review",
+  "final_reviewed_source_sha256": {
+    "src/DailyLPVault.sol": "13250d3cd23182149802ec397f3ee80f01073bf5d84161e139f947c304c33a38",
+    "src/DailyBetCustody.sol": "21059a5824b3950e41849c5b2f677dcc00dafeb916e12745672f5b760de8d442"
+  },
+  "independent_external_review": false,
+  "production_approved": false,
+  "skill": "/Users/aurelou/.codex/skills/solidity-auditor/SKILL.md",
+  "installed_skill_version": "3",
+  "upstream_version_at_review": "4.1",
+  "runtime_adaptation": "Twelve specialty perspectives grouped across three workers under the four-slot runtime; not twelve independent reviewers.",
+  "lenses": ["math", "access", "economic security", "execution trace", "invariants", "periphery", "first principles", "asymmetry", "boundaries", "numerical gaps", "trust gaps", "flow gaps"],
+  "findings": [
+    {
+      "id": "DAILY-ADMISSION-001",
+      "severity": "medium",
+      "functions": ["DailyLPVault.deposit", "DailyLPVault.requestExit", "DailyLPVault.archiveEmptyLot"],
+      "root_cause": "Permissionless one-atomic-unit deposits could consume all globally bounded LP account slots indefinitely.",
+      "proof": "With one seeded lot, 63 dust contributions cost 63 USDC atomic units and consume the other slots. Exit-requesting them excludes their underwriting risk, while nonzero equity prevents permissionless archival.",
+      "fix": "Per-deposit capacity authorization binds owner, exact amount, unique consumed ID, deadline, chain, vault and current signer version under both settlement and risk signatures.",
+      "regressions": ["testUnauthorizedDustDepositsCannotConsumeBoundedCapacity", "testDepositAuthorizationBindsOwnerAmountExpiryVersionAndSingleUse", "testDepositExpiryRotationCrossVaultAndFailedTransferRollback"],
+      "status": "resolved_in_candidate",
+      "remaining_scope": "Authorized admission policy and adequate public scaling remain unapproved; signatures do not establish wallet identity."
+    },
+    {
+      "id": "DAILY-VOID-002",
+      "severity": "medium",
+      "functions": ["DailyLPVault.resolve", "DailyLPVault.closeDay", "DailyBetCustody.resolve"],
+      "root_cause": "A legitimate final void determined after cutoff could neither resolve in the old day nor permit closing the expired open bet.",
+      "proof": "Acceptance T-60 seconds, expiry T-30, final void determination T+10: old resolve rejects next-day canonical time while old close rejects unresolved expiry before T.",
+      "fix": "Authenticate the future-day final void without releasing accepted risk or customer stake; preceding closes retain that exposure and may advance; exact-once completion requires the canonical day and pays the original owner.",
+      "regressions": ["testFinalVoidDeterminedNextDayUnblocksPriorCloseWithoutBackdatingOrEarlyRelease", "testFutureDayVoidKeepsReserveAcrossMultipleOverdueCloses", "testPythonLedgerDifferentialTransitionsWithOriginalOwnershipAndLateClose"],
+      "status": "resolved_in_candidate"
+    }
+  ],
+  "addressed_leads": [
+    {
+      "id": "DAILY-NUMERIC-003",
+      "functions": ["DailyLPVault.accept", "DailyLPVault.resolve", "DailyBetCustody.accept", "DailyBetCustody.deposit"],
+      "scope": "Synthetic MAX_MONEY domain, larger than realistic USDC funding",
+      "cause": "Acceptance could fit current money bounds while a later winning credit or losing stake exceeded the accounting domain.",
+      "fix": "Reserve all open losing-stake headroom in LP capital and all open winning-bonus headroom in custody before acceptance/deposit.",
+      "regressions": ["testAcceptedOutcomesReserveNumericHeadroomAtMoneyBoundary", "testCustodyReservesAllWinningCreditsBeforeAcceptingAtMoneyBoundary"],
+      "status": "addressed"
+    }
+  ],
+  "batch_followup": "Three workers found no new concrete issue in netting, original owners, duplicate/invalid rollback or millisecond seams. Future-day voids must use queue/completion rather than blind batch submission. Default compilation stack depth was fixed by extracting the loop, without changing compiler settings.",
+  "remaining_requirements": ["Independent external contract/pricing reviews", "Target-chain transaction gas and maximum-open-bet close verification", "Scalable public account admission policy", "Durable shared-engine/onchain stage bindings and relay/recovery", "Funded reward reservations and LP incentive checkpoints", "Economic sign-off, actual funding and deployment rehearsal"]
+}
